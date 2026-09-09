@@ -1,81 +1,67 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Button,
   Divider,
-  IconButton,
-  InputAdornment,
   Paper,
   TextField,
   Typography,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
-import { Link } from "react-router-dom";
 import GoogleIcon from "@mui/icons-material/Google";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import { userApi } from "../../../../services/api";
 
 export default function UserRegister() {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   // ============================================================
-  // PASSWORD FIELD - Toggle Visibility (using slotProps for MUI v9)
+  // STATE
   // ============================================================
-  const passwordSlotProps = {
-    input: {
-      endAdornment: (
-        <InputAdornment position="end">
-          <IconButton
-            edge="end"
-            size="small"
-            onClick={() => setShowPassword((value) => !value)}
-            sx={{
-              color: "#5D9DCA",
-              "&:hover": { color: "#1976D2" },
-            }}
-          >
-            {showPassword ? (
-              <VisibilityOutlinedIcon fontSize="small" />
-            ) : (
-              <VisibilityOffOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </InputAdornment>
-      ),
-    },
-  };
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // ============================================================
-  // CONFIRM PASSWORD FIELD - Toggle Visibility
+  // HANDLE REGISTER
   // ============================================================
-  const confirmPasswordSlotProps = {
-    input: {
-      endAdornment: (
-        <InputAdornment position="end">
-          <IconButton
-            edge="end"
-            size="small"
-            onClick={() => setShowConfirmPassword((value) => !value)}
-            sx={{
-              color: "#5D9DCA",
-              "&:hover": { color: "#1976D2" },
-            }}
-          >
-            {showConfirmPassword ? (
-              <VisibilityOutlinedIcon fontSize="small" />
-            ) : (
-              <VisibilityOffOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </InputAdornment>
-      ),
-    },
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await userApi.register({ email, password });
+      const { token, user } = response.data;
+
+      localStorage.setItem("userToken", token);
+      localStorage.setItem("userData", JSON.stringify(user));
+
+      navigate("/dashboard");
+    } catch (err: any) {
+      console.error("Register error:", err);
+      const message = err.response?.data?.message || "Registration failed. Please try again.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    // ============================================================
-    // MAIN CONTAINER - Full viewport, centered, light blue gradient
-    // ============================================================
     <Box
       sx={{
         minHeight: "100vh",
@@ -87,9 +73,6 @@ export default function UserRegister() {
           "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
       }}
     >
-      {/* ============================================================
-          REGISTER CARD - Glass-morphism paper
-          ============================================================ */}
       <Paper
         elevation={0}
         sx={{
@@ -110,9 +93,6 @@ export default function UserRegister() {
           overflow: "hidden",
         }}
       >
-        {/* ============================================================
-            PAGE TITLE
-            ============================================================ */}
         <Typography
           align="center"
           sx={{
@@ -126,17 +106,13 @@ export default function UserRegister() {
           Register
         </Typography>
 
-        {/* ============================================================
-            REGISTER FORM - Contains all inputs and actions
-            ============================================================ */}
-        <Box
-          component="form"
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.5,
-          }}
-        >
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {/* ---------- EMAIL FIELD ---------- */}
           <Typography
             component="label"
@@ -159,28 +135,23 @@ export default function UserRegister() {
             fullWidth
             placeholder="user1@gmail.com"
             size="small"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
-          {/* ---------- PASSWORD FIELD ---------- */}
+          {/* ---------- PASSWORD FIELD  ---------- */}
           <Typography
             component="label"
             htmlFor="password"
@@ -198,28 +169,22 @@ export default function UserRegister() {
           </Typography>
           <TextField
             id="password"
-            type={showPassword ? "text" : "password"}
+            type="password" 
             fullWidth
             placeholder="••••••"
             size="small"
-            slotProps={passwordSlotProps} 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
@@ -242,28 +207,22 @@ export default function UserRegister() {
           </Typography>
           <TextField
             id="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
+            type="password" 
             fullWidth
             placeholder="••••••"
             size="small"
-            slotProps={confirmPasswordSlotProps} 
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
@@ -271,9 +230,10 @@ export default function UserRegister() {
           {/* ---------- REGISTER BUTTON ---------- */}
           <Button
             fullWidth
-            type="button"
+            type="submit"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               mt: { xs: 2, sm: 2.5 },
               minHeight: { xs: 44, sm: 46 },
@@ -289,12 +249,15 @@ export default function UserRegister() {
                 boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": {
+                backgroundColor: "#90CAF9",
+              },
             }}
           >
-            REGISTER
+            {loading ? <CircularProgress size={24} color="inherit" /> : "REGISTER"}
           </Button>
 
-          {/* ---------- LOGIN SECTION  ---------- */}
+          {/* ---------- LOGIN SECTION ---------- */}
           <Typography
             align="center"
             sx={{
@@ -309,10 +272,11 @@ export default function UserRegister() {
           <Button
             fullWidth
             component={Link}
-            to="/login" // Navigate to Login page
+            to="/login"
             type="button"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               minHeight: { xs: 44, sm: 46 },
               borderRadius: 2.5,
@@ -327,12 +291,14 @@ export default function UserRegister() {
                 boxShadow: "0 6px 20px rgba(21, 101, 192, 0.35)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": {
+                backgroundColor: "#90CAF9",
+              },
             }}
           >
             LOGIN
           </Button>
 
-          {/* ---------- SOCIAL LOGIN DIVIDER ---------- */}
           <Divider
             sx={{
               my: { xs: 2, sm: 2.5 },
@@ -348,12 +314,12 @@ export default function UserRegister() {
             OR CONTINUE WITH
           </Divider>
 
-          {/* ---------- GOOGLE LOGIN BUTTON ---------- */}
           <Button
             fullWidth
             type="button"
             variant="outlined"
             startIcon={<GoogleIcon />}
+            disabled={loading}
             sx={{
               minHeight: { xs: 42, sm: 44 },
               borderRadius: 2.5,
@@ -374,16 +340,7 @@ export default function UserRegister() {
             Continue with Google
           </Button>
         </Box>
-        {/* ============================================================
-            END OF REGISTER FORM
-            ============================================================ */}
       </Paper>
-      {/* ============================================================
-          END OF REGISTER CARD
-          ============================================================ */}
     </Box>
-    // ============================================================
-    // END OF MAIN CONTAINER
-    // ============================================================
   );
 }

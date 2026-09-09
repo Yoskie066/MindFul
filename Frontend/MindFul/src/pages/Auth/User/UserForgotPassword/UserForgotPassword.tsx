@@ -1,84 +1,72 @@
-// UserForgotPassword.tsx
-// ============================================================
-// FORGOT PASSWORD PAGE - MindFul Authentication
-// ============================================================
-
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Button,
-  IconButton,
-  InputAdornment,
   Paper,
   TextField,
   Typography,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import { userApi } from "../../../../services/api";
 
 export default function UserForgotPassword() {
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   // ============================================================
-  // NEW PASSWORD FIELD - Toggle Visibility (using slotProps for MUI v9)
+  // STATE
   // ============================================================
-  const newPasswordSlotProps = {
-    input: {
-      endAdornment: (
-        <InputAdornment position="end">
-          <IconButton
-            edge="end"
-            size="small"
-            onClick={() => setShowNewPassword((value) => !value)}
-            sx={{
-              color: "#5D9DCA",
-              "&:hover": { color: "#1976D2" },
-            }}
-          >
-            {showNewPassword ? (
-              <VisibilityOutlinedIcon fontSize="small" />
-            ) : (
-              <VisibilityOffOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </InputAdornment>
-      ),
-    },
-  };
+  const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   // ============================================================
-  // CONFIRM PASSWORD FIELD - Toggle Visibility
+  // HANDLE RESET PASSWORD
   // ============================================================
-  const confirmPasswordSlotProps = {
-    input: {
-      endAdornment: (
-        <InputAdornment position="end">
-          <IconButton
-            edge="end"
-            size="small"
-            onClick={() => setShowConfirmPassword((value) => !value)}
-            sx={{
-              color: "#5D9DCA",
-              "&:hover": { color: "#1976D2" },
-            }}
-          >
-            {showConfirmPassword ? (
-              <VisibilityOutlinedIcon fontSize="small" />
-            ) : (
-              <VisibilityOffOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </InputAdornment>
-      ),
-    },
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Step 1: Request reset token
+      const forgotResponse = await userApi.forgotPassword({ email });
+      const resetToken = forgotResponse.data.resetToken;
+
+      // Step 2: Reset password using the token
+      await userApi.resetPassword({ token: resetToken, newPassword });
+
+      setSuccess("Password reset successfully! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (err: any) {
+      console.error("Reset password error:", err);
+      const message = err.response?.data?.message || "Failed to reset password. Please try again.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    // ============================================================
-    // MAIN CONTAINER - Full viewport, centered, light blue gradient
-    // ============================================================
     <Box
       sx={{
         minHeight: "100vh",
@@ -90,9 +78,6 @@ export default function UserForgotPassword() {
           "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
       }}
     >
-      {/* ============================================================
-          FORGOT PASSWORD CARD - Glass-morphism paper
-          ============================================================ */}
       <Paper
         elevation={0}
         sx={{
@@ -129,17 +114,21 @@ export default function UserForgotPassword() {
           Forgot Password
         </Typography>
 
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            {success}
+          </Alert>
+        )}
+
         {/* ============================================================
-            FORGOT PASSWORD FORM
+            RESET PASSWORD FORM
             ============================================================ */}
-        <Box
-          component="form"
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.5,
-          }}
-        >
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {/* ---------- EMAIL FIELD ---------- */}
           <Typography
             component="label"
@@ -161,23 +150,18 @@ export default function UserForgotPassword() {
             fullWidth
             placeholder="user1@gmail.com"
             size="small"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
@@ -200,28 +184,22 @@ export default function UserForgotPassword() {
           </Typography>
           <TextField
             id="newPassword"
-            type={showNewPassword ? "text" : "password"}
+            type="password" 
             fullWidth
             placeholder="••••••"
             size="small"
-            slotProps={newPasswordSlotProps} 
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
@@ -244,28 +222,22 @@ export default function UserForgotPassword() {
           </Typography>
           <TextField
             id="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
+            type="password" 
             fullWidth
             placeholder="••••••"
             size="small"
-            slotProps={confirmPasswordSlotProps} 
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
@@ -273,9 +245,10 @@ export default function UserForgotPassword() {
           {/* ---------- RESET PASSWORD BUTTON ---------- */}
           <Button
             fullWidth
-            type="button"
+            type="submit"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               mt: { xs: 2, sm: 2.5 },
               minHeight: { xs: 44, sm: 46 },
@@ -291,12 +264,15 @@ export default function UserForgotPassword() {
                 boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": {
+                backgroundColor: "#90CAF9",
+              },
             }}
           >
-            RESET PASSWORD
+            {loading ? <CircularProgress size={24} color="inherit" /> : "RESET PASSWORD"}
           </Button>
 
-          {/* ---------- LOGIN SECTION (if already have account) ---------- */}
+          {/* ---------- LOGIN BUTTON ---------- */}
           <Typography
             align="center"
             sx={{
@@ -306,15 +282,16 @@ export default function UserForgotPassword() {
               color: "#4A6F88",
             }}
           >
-            Already have an account?
+            Remember your password?
           </Typography>
           <Button
             fullWidth
             component={Link}
-            to="/login" // Navigate to Login page
+            to="/login"
             type="button"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               minHeight: { xs: 44, sm: 46 },
               borderRadius: 2.5,
@@ -329,21 +306,15 @@ export default function UserForgotPassword() {
                 boxShadow: "0 6px 20px rgba(21, 101, 192, 0.35)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": {
+                backgroundColor: "#90CAF9",
+              },
             }}
           >
             LOGIN
           </Button>
         </Box>
-        {/* ============================================================
-            END OF FORGOT PASSWORD FORM
-            ============================================================ */}
       </Paper>
-      {/* ============================================================
-          END OF FORGOT PASSWORD CARD
-          ============================================================ */}
     </Box>
-    // ============================================================
-    // END OF MAIN CONTAINER
-    // ============================================================
   );
 }

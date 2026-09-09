@@ -1,53 +1,55 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Box,
   Button,
   Divider,
-  IconButton,
-  InputAdornment,
   Paper,
   TextField,
   Typography,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
-import { Link } from "react-router-dom";
 import GoogleIcon from "@mui/icons-material/Google";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import { userApi } from "../../../../services/api";
 
 export default function UserLogin() {
-  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   // ============================================================
-  // PASSWORD FIELD - Toggle Visibility (using slotProps for MUI v9)
+  // STATE
   // ============================================================
-  const passwordSlotProps = {
-    input: {
-      endAdornment: (
-        <InputAdornment position="end">
-          <IconButton
-            edge="end"
-            size="small"
-            onClick={() => setShowPassword((value) => !value)}
-            sx={{
-              color: "#5D9DCA",
-              "&:hover": { color: "#1976D2" },
-            }}
-          >
-            {showPassword ? (
-              <VisibilityOutlinedIcon fontSize="small" />
-            ) : (
-              <VisibilityOffOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </InputAdornment>
-      ),
-    },
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // ============================================================
+  // HANDLE LOGIN
+  // ============================================================
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const response = await userApi.login({ email, password });
+      const { token, user } = response.data;
+
+      localStorage.setItem("userToken", token);
+      localStorage.setItem("userData", JSON.stringify(user));
+
+      navigate("/dashboard");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      const message = err.response?.data?.message || "Login failed. Please try again.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    // ============================================================
-    // MAIN CONTAINER - Full viewport, centered, light blue gradient
-    // ============================================================
     <Box
       sx={{
         minHeight: "100vh",
@@ -59,9 +61,6 @@ export default function UserLogin() {
           "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
       }}
     >
-      {/* ============================================================
-          LOGIN CARD - Glass-morphism paper
-          ============================================================ */}
       <Paper
         elevation={0}
         sx={{
@@ -83,9 +82,6 @@ export default function UserLogin() {
           overflow: "hidden",
         }}
       >
-        {/* ============================================================
-            PAGE TITLE
-            ============================================================ */}
         <Typography
           align="center"
           sx={{
@@ -99,17 +95,13 @@ export default function UserLogin() {
           Login
         </Typography>
 
-        {/* ============================================================
-            LOGIN FORM - Contains all inputs and actions
-            ============================================================ */}
-        <Box
-          component="form"
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.5,
-          }}
-        >
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
           {/* ---------- EMAIL FIELD ---------- */}
           <Typography
             component="label"
@@ -131,28 +123,23 @@ export default function UserLogin() {
             fullWidth
             placeholder="user1@gmail.com"
             size="small"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
-          {/* ---------- PASSWORD FIELD ---------- */}
+          {/* ---------- PASSWORD FIELD  ---------- */}
           <Typography
             component="label"
             htmlFor="password"
@@ -170,56 +157,42 @@ export default function UserLogin() {
           </Typography>
           <TextField
             id="password"
-            type={showPassword ? "text" : "password"}
+            type="password"
             fullWidth
             placeholder="••••••"
             size="small"
-            slotProps={passwordSlotProps} 
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
           {/* ---------- FORGOT PASSWORD BUTTON ---------- */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              mt: 1,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
             <Button
               component={Link}
               to="/forgot-password"
               variant="text"
               disableElevation
+              disabled={loading}
               sx={{
                 fontSize: { xs: 12, sm: 13 },
                 fontWeight: 600,
-                color: "#1976D2",
+                color: "#0D3654",
                 textTransform: "none",
                 minWidth: "auto",
                 p: 0,
-                "&:hover": {
-                  color: "#0D47A1",
-                  backgroundColor: "transparent",
-                },
+                "&:hover": { color: "#0D47A1", backgroundColor: "transparent" },
               }}
             >
               Forgot password?
@@ -229,9 +202,10 @@ export default function UserLogin() {
           {/* ---------- LOGIN BUTTON ---------- */}
           <Button
             fullWidth
-            type="button"
+            type="submit"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               mt: { xs: 2, sm: 2.5 },
               minHeight: { xs: 44, sm: 46 },
@@ -247,9 +221,12 @@ export default function UserLogin() {
                 boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": {
+                backgroundColor: "#90CAF9",
+              },
             }}
           >
-            LOGIN
+            {loading ? <CircularProgress size={24} color="inherit" /> : "LOGIN"}
           </Button>
 
           {/* ---------- REGISTER SECTION ---------- */}
@@ -267,10 +244,11 @@ export default function UserLogin() {
           <Button
             fullWidth
             component={Link}
-            to="/register" // Navigate to Register page
+            to="/register"
             type="button"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               minHeight: { xs: 44, sm: 46 },
               borderRadius: 2.5,
@@ -285,12 +263,14 @@ export default function UserLogin() {
                 boxShadow: "0 6px 20px rgba(21, 101, 192, 0.35)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": {
+                backgroundColor: "#90CAF9",
+              },
             }}
           >
             REGISTER
           </Button>
 
-          {/* ---------- SOCIAL LOGIN DIVIDER ---------- */}
           <Divider
             sx={{
               my: { xs: 2, sm: 2.5 },
@@ -306,12 +286,12 @@ export default function UserLogin() {
             OR CONTINUE WITH
           </Divider>
 
-          {/* ---------- GOOGLE LOGIN BUTTON ---------- */}
           <Button
             fullWidth
             type="button"
             variant="outlined"
             startIcon={<GoogleIcon />}
+            disabled={loading}
             sx={{
               minHeight: { xs: 42, sm: 44 },
               borderRadius: 2.5,
@@ -332,16 +312,7 @@ export default function UserLogin() {
             Continue with Google
           </Button>
         </Box>
-        {/* ============================================================
-            END OF LOGIN FORM
-            ============================================================ */}
       </Paper>
-      {/* ============================================================
-          END OF LOGIN CARD
-          ============================================================ */}
     </Box>
-    // ============================================================
-    // END OF MAIN CONTAINER
-    // ============================================================
   );
 }

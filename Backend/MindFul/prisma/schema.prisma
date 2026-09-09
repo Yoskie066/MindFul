@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  email              String   @unique
+  password           String
+  resetToken         String?  @db.VarChar(255)
+  resetTokenExpiry   DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Admin {
+  id                 Int      @id @default(autoincrement())
+  email              String   @unique
+  password           String
+  resetToken         String?  @db.VarChar(255)
+  resetTokenExpiry   DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("admins")
+}
