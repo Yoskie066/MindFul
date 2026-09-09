@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import { Box, CssBaseline } from "@mui/material";
 import UserHeader from "./UserHeader";
 
-const DRAWER_WIDTH = 260; 
+const DRAWER_WIDTH = 260;
 
 export default function UserLayout() {
   return (
