@@ -7,9 +7,12 @@ import {
   Paper,
   TextField,
   Typography,
-  Alert,
   CircularProgress,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import GoogleIcon from "@mui/icons-material/Google";
 import { userApi } from "../../../../services/api";
 
@@ -23,39 +26,59 @@ export default function UserRegister() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"success" | "error">("success");
+  const [modalTitle, setModalTitle] = useState("");
 
   // ============================================================
   // HANDLE REGISTER
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setModalType("error");
+      setModalTitle("Registration Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setModalType("error");
+      setModalTitle("Registration Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await userApi.register({ email, password });
-      const { token, user } = response.data;
+      await userApi.register({ email, password });
 
-      localStorage.setItem("userToken", token);
-      localStorage.setItem("userData", JSON.stringify(user));
+      // Success modal 
+      setModalType("success");
+      setModalTitle("Registration Successful");
+      setModalOpen(true);
 
-      navigate("/dashboard");
+      setTimeout(() => {
+        setModalOpen(false);
+        navigate("/login");
+      }, 2000);
     } catch (err: any) {
       console.error("Register error:", err);
-      const message = err.response?.data?.message || "Registration failed. Please try again.";
-      setError(message);
+
+      // Error modal 
+      setModalType("error");
+      setModalTitle("Registration Failed");
+      setModalOpen(true);
+
+      setTimeout(() => {
+        setModalOpen(false);
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -106,13 +129,11 @@ export default function UserRegister() {
           Register
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+        >
           {/* ---------- EMAIL FIELD ---------- */}
           <Typography
             component="label"
@@ -151,7 +172,7 @@ export default function UserRegister() {
             }}
           />
 
-          {/* ---------- PASSWORD FIELD  ---------- */}
+          {/* ---------- PASSWORD FIELD ---------- */}
           <Typography
             component="label"
             htmlFor="password"
@@ -169,7 +190,7 @@ export default function UserRegister() {
           </Typography>
           <TextField
             id="password"
-            type="password" 
+            type="password"
             fullWidth
             placeholder="••••••"
             size="small"
@@ -207,7 +228,7 @@ export default function UserRegister() {
           </Typography>
           <TextField
             id="confirmPassword"
-            type="password" 
+            type="password"
             fullWidth
             placeholder="••••••"
             size="small"
@@ -249,9 +270,7 @@ export default function UserRegister() {
                 boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
                 transform: "translateY(-1px)",
               },
-              "&.Mui-disabled": {
-                backgroundColor: "#90CAF9",
-              },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : "REGISTER"}
@@ -291,9 +310,7 @@ export default function UserRegister() {
                 boxShadow: "0 6px 20px rgba(21, 101, 192, 0.35)",
                 transform: "translateY(-1px)",
               },
-              "&.Mui-disabled": {
-                backgroundColor: "#90CAF9",
-              },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
             LOGIN
@@ -341,6 +358,55 @@ export default function UserRegister() {
           </Button>
         </Box>
       </Paper>
+
+      {/* ============================================================ */}
+      {/* MODAL Success  */}
+      {/* ============================================================ */}
+      <Dialog
+        open={modalOpen}
+        maxWidth="xs"
+        fullWidth
+        disableEscapeKeyDown
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              p: 1,
+              textAlign: "center",
+            },
+          },
+        }}
+      >
+        <DialogContent sx={{ pt: 3, pb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 2,
+            }}
+          >
+            {modalType === "success" ? (
+              <CheckCircleRoundedIcon
+                sx={{
+                  fontSize: 64,
+                  color: "#1976D2",
+                }}
+              />
+            ) : (
+              <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
+            )}
+          </Box>
+          <Typography
+            sx={{
+              fontSize: "1.3rem",
+              fontWeight: 800,
+              color: "#0D3654",
+            }}
+          >
+            {modalTitle}
+          </Typography>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

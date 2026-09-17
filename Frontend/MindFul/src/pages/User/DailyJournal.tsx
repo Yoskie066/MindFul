@@ -1,4 +1,3 @@
-// src/pages/User/DailyJournal.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,13 +11,17 @@ import {
   Chip,
   InputAdornment,
   Alert,
-  Snackbar,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import BedtimeRoundedIcon from "@mui/icons-material/BedtimeRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import EmojiEmotionsRoundedIcon from "@mui/icons-material/EmojiEmotionsRounded";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
+import { journalApi } from "../../services/api";
 
 export default function DailyJournal() {
   const navigate = useNavigate();
@@ -33,7 +36,9 @@ export default function DailyJournal() {
   // Today's date for datetime-local min value
   const now = new Date();
   const tzOffset = now.getTimezoneOffset() * 60000;
-  const localISOTime = new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
+  const localISOTime = new Date(now.getTime() - tzOffset)
+    .toISOString()
+    .slice(0, 16);
 
   // ============================================================
   // STATE
@@ -45,8 +50,12 @@ export default function DailyJournal() {
   const [sleepHours, setSleepHours] = useState(7);
   const [tags, setTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"success" | "error">("success");
+  const [modalTitle, setModalTitle] = useState("");
 
   const availableTags = [
     "School",
@@ -75,13 +84,16 @@ export default function DailyJournal() {
     );
   };
 
+  // ============================================================
+  // HANDLE SUBMIT (CREATE ONLY)
+  // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      const journalEntry = {
+      await journalApi.create({
         mood: moodLabel,
         moodEmoji,
         moodColor,
@@ -91,23 +103,33 @@ export default function DailyJournal() {
         energyLevel,
         sleepHours,
         tags,
-        createdAt: new Date().toISOString(),
-      };
-      const existing = JSON.parse(localStorage.getItem("journalEntries") || "[]");
-      localStorage.setItem(
-        "journalEntries",
-        JSON.stringify([...existing, journalEntry])
-      );
+      });
 
-      setSuccess(true);
+      // Success modal
+      setModalType("success");
+      setModalTitle("Enter Successful");
+      setModalOpen(true);
+
       setTimeout(() => {
+        setModalOpen(false);
         localStorage.removeItem("selectedMood");
         localStorage.removeItem("selectedMoodEmoji");
         localStorage.removeItem("selectedMoodColor");
         navigate("/history");
-      }, 1500);
+      }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to save journal entry.");
+      const errorText =
+        err.response?.data?.message || "Failed to save journal entry.";
+      setError(errorText);
+
+      // Error modal
+      setModalType("error");
+      setModalTitle("Failed to Save");
+      setModalOpen(true);
+
+      setTimeout(() => {
+        setModalOpen(false);
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -152,10 +174,10 @@ export default function DailyJournal() {
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           boxShadow: (theme) =>
-            `0 20px 60px ${alpha(theme.palette.primary.main, 0.1)}, 0 8px 24px ${alpha(
+            `0 20px 60px ${alpha(
               theme.palette.primary.main,
-              0.04
-            )}`,
+              0.1
+            )}, 0 8px 24px ${alpha(theme.palette.primary.main, 0.04)}`,
           border: "1px solid rgba(255, 255, 255, 0.7)",
           transition: "all 0.3s ease",
           position: "relative",
@@ -258,7 +280,10 @@ export default function DailyJournal() {
                 backgroundColor: "#F0F7FE",
                 "& fieldset": { borderColor: "transparent", borderWidth: 2 },
                 "&:hover fieldset": { borderColor: "#90CAF9" },
-                "&.Mui-focused fieldset": { borderColor: "#1976D2", borderWidth: 2 },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#1976D2",
+                  borderWidth: 2,
+                },
               },
             }}
           />
@@ -291,7 +316,10 @@ export default function DailyJournal() {
                 backgroundColor: "#F0F7FE",
                 "& fieldset": { borderColor: "transparent", borderWidth: 2 },
                 "&:hover fieldset": { borderColor: "#90CAF9" },
-                "&.Mui-focused fieldset": { borderColor: "#1976D2", borderWidth: 2 },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#1976D2",
+                  borderWidth: 2,
+                },
               },
             }}
           />
@@ -299,11 +327,17 @@ export default function DailyJournal() {
 
         {/* ----- STRESS LEVEL ----- */}
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-            <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#1D425D" }}>
+          <Box
+            sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
+          >
+            <Typography
+              sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#1D425D" }}
+            >
               Stress Level
             </Typography>
-            <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#E53935" }}>
+            <Typography
+              sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#E53935" }}
+            >
               {stressLevel} / 10
             </Typography>
           </Box>
@@ -320,19 +354,31 @@ export default function DailyJournal() {
               "& .MuiSlider-mark": { backgroundColor: "#F8BBD0" },
             }}
           />
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
-            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>Low</Typography>
-            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>High</Typography>
+          <Box
+            sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}
+          >
+            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>
+              Low
+            </Typography>
+            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>
+              High
+            </Typography>
           </Box>
         </Box>
 
         {/* ----- ENERGY LEVEL ----- */}
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-            <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#1D425D" }}>
+          <Box
+            sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
+          >
+            <Typography
+              sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#1D425D" }}
+            >
               Energy Level
             </Typography>
-            <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#43A047" }}>
+            <Typography
+              sx={{ fontSize: "0.9rem", fontWeight: 700, color: "#43A047" }}
+            >
               {energyLevel} / 10
             </Typography>
           </Box>
@@ -349,9 +395,15 @@ export default function DailyJournal() {
               "& .MuiSlider-mark": { backgroundColor: "#C8E6C9" },
             }}
           />
-          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
-            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>Low</Typography>
-            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>High</Typography>
+          <Box
+            sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}
+          >
+            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>
+              Low
+            </Typography>
+            <Typography sx={{ fontSize: "0.75rem", color: "#5A7D96" }}>
+              High
+            </Typography>
           </Box>
         </Box>
 
@@ -380,7 +432,9 @@ export default function DailyJournal() {
             slotProps={{
               htmlInput: { min: 0, max: 24, step: 0.5 },
               input: {
-                endAdornment: <InputAdornment position="end">hours</InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">hours</InputAdornment>
+                ),
               },
             }}
             sx={{
@@ -389,7 +443,10 @@ export default function DailyJournal() {
                 backgroundColor: "#F0F7FE",
                 "& fieldset": { borderColor: "transparent", borderWidth: 2 },
                 "&:hover fieldset": { borderColor: "#90CAF9" },
-                "&.Mui-focused fieldset": { borderColor: "#1976D2", borderWidth: 2 },
+                "&.Mui-focused fieldset": {
+                  borderColor: "#1976D2",
+                  borderWidth: 2,
+                },
               },
             }}
           />
@@ -486,16 +543,54 @@ export default function DailyJournal() {
         </Box>
       </Paper>
 
-      {/* Success Snackbar */}
-      <Snackbar
-        open={success}
-        autoHideDuration={1500}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      {/* ============================================================ */}
+      {/* MODAL Success / Error */}
+      {/* ============================================================ */}
+      <Dialog
+        open={modalOpen}
+        maxWidth="xs"
+        fullWidth
+        disableEscapeKeyDown
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              p: 1,
+              textAlign: "center",
+            },
+          },
+        }}
       >
-        <Alert severity="success" sx={{ borderRadius: 2 }}>
-          Journal saved successfully!
-        </Alert>
-      </Snackbar>
+        <DialogContent sx={{ pt: 3, pb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 2,
+            }}
+          >
+            {modalType === "success" ? (
+              <CheckCircleRoundedIcon
+                sx={{
+                  fontSize: 64,
+                  color: "#1976D2",
+                }}
+              />
+            ) : (
+              <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
+            )}
+          </Box>
+          <Typography
+            sx={{
+              fontSize: "1.3rem",
+              fontWeight: 800,
+              color: "#0D3654",
+            }}
+          >
+            {modalTitle}
+          </Typography>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

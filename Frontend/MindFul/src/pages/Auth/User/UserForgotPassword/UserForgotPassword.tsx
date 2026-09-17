@@ -6,9 +6,12 @@ import {
   Paper,
   TextField,
   Typography,
-  Alert,
   CircularProgress,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import { userApi } from "../../../../services/api";
 
 export default function UserForgotPassword() {
@@ -21,25 +24,31 @@ export default function UserForgotPassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"success" | "error">("success");
+  const [modalTitle, setModalTitle] = useState("");
 
   // ============================================================
   // HANDLE RESET PASSWORD
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
-    // Validate passwords match
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setModalType("error");
+      setModalTitle("Reset Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
       return;
     }
 
     if (newPassword.length < 6) {
-      setError("Password must be at least 6 characters");
+      setModalType("error");
+      setModalTitle("Reset Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
       return;
     }
 
@@ -53,14 +62,26 @@ export default function UserForgotPassword() {
       // Step 2: Reset password using the token
       await userApi.resetPassword({ token: resetToken, newPassword });
 
-      setSuccess("Password reset successfully! Redirecting to login...");
+      // Success modal 
+      setModalType("success");
+      setModalTitle("Password Reset Successful");
+      setModalOpen(true);
+
       setTimeout(() => {
+        setModalOpen(false);
         navigate("/login");
       }, 2000);
     } catch (err: any) {
       console.error("Reset password error:", err);
-      const message = err.response?.data?.message || "Failed to reset password. Please try again.";
-      setError(message);
+
+      // Error modal 
+      setModalType("error");
+      setModalTitle("Reset Failed");
+      setModalOpen(true);
+
+      setTimeout(() => {
+        setModalOpen(false);
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -98,9 +119,6 @@ export default function UserForgotPassword() {
           overflow: "hidden",
         }}
       >
-        {/* ============================================================
-            PAGE TITLE
-            ============================================================ */}
         <Typography
           align="center"
           sx={{
@@ -114,21 +132,11 @@ export default function UserForgotPassword() {
           Forgot Password
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
-
-        {/* ============================================================
-            RESET PASSWORD FORM
-            ============================================================ */}
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+        >
           {/* ---------- EMAIL FIELD ---------- */}
           <Typography
             component="label"
@@ -184,7 +192,7 @@ export default function UserForgotPassword() {
           </Typography>
           <TextField
             id="newPassword"
-            type="password" 
+            type="password"
             fullWidth
             placeholder="••••••"
             size="small"
@@ -222,7 +230,7 @@ export default function UserForgotPassword() {
           </Typography>
           <TextField
             id="confirmPassword"
-            type="password" 
+            type="password"
             fullWidth
             placeholder="••••••"
             size="small"
@@ -264,12 +272,14 @@ export default function UserForgotPassword() {
                 boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
                 transform: "translateY(-1px)",
               },
-              "&.Mui-disabled": {
-                backgroundColor: "#90CAF9",
-              },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : "RESET PASSWORD"}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "RESET PASSWORD"
+            )}
           </Button>
 
           {/* ---------- LOGIN BUTTON ---------- */}
@@ -306,15 +316,62 @@ export default function UserForgotPassword() {
                 boxShadow: "0 6px 20px rgba(21, 101, 192, 0.35)",
                 transform: "translateY(-1px)",
               },
-              "&.Mui-disabled": {
-                backgroundColor: "#90CAF9",
-              },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
             LOGIN
           </Button>
         </Box>
       </Paper>
+
+      {/* ============================================================ */}
+      {/* MODAL Success  */}
+      {/* ============================================================ */}
+      <Dialog
+        open={modalOpen}
+        maxWidth="xs"
+        fullWidth
+        disableEscapeKeyDown
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              p: 1,
+              textAlign: "center",
+            },
+          },
+        }}
+      >
+        <DialogContent sx={{ pt: 3, pb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 2,
+            }}
+          >
+            {modalType === "success" ? (
+              <CheckCircleRoundedIcon
+                sx={{
+                  fontSize: 64,
+                  color: "#1976D2",
+                }}
+              />
+            ) : (
+              <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
+            )}
+          </Box>
+          <Typography
+            sx={{
+              fontSize: "1.3rem",
+              fontWeight: 800,
+              color: "#0D3654",
+            }}
+          >
+            {modalTitle}
+          </Typography>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }

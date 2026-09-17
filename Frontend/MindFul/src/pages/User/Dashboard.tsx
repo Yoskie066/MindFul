@@ -24,6 +24,7 @@ import LocalFireDepartmentRoundedIcon from "@mui/icons-material/LocalFireDepartm
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
+import { dashboardApi } from "../../services/api";
 
 // ============================================================
 // TYPES
@@ -84,9 +85,16 @@ export default function Dashboard() {
   ];
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("journalEntries") || "[]");
-    setEntries(stored);
-  }, []);
+    const fetchDashboard = async () => {
+      try {
+        const res = await dashboardApi.getAll();
+        setEntries(res.data.entries || []);
+      } catch (err) {
+      console.error("Failed to fetch dashboard:", err);
+    }
+  };
+  fetchDashboard();
+}, []);
 
   const itemsPerSlide = isDesktop ? 4 : 2;
 
@@ -733,9 +741,6 @@ export default function Dashboard() {
             }}
           >
             No data yet
-          </Typography>
-          <Typography sx={{ fontSize: "0.9rem", color: "#5A7D96" }}>
-            Complete your first Daily Journal to see your insights here.
           </Typography>
         </Paper>
       )}

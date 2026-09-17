@@ -29,12 +29,20 @@ api.interceptors.request.use(
 );
 
 // ============================================================
-// RESPONSE INTERCEPTOR - Handle errors globally
+// RESPONSE INTERCEPTOR 
 // ============================================================
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url || "";
+    const isAuthEndpoint =
+      url.includes("/users/login") ||
+      url.includes("/users/register") ||
+      url.includes("/users/forgot-password") ||
+      url.includes("/users/reset-password");
+
+  
+    if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem("userToken");
       localStorage.removeItem("userData");
       window.location.href = "/login";
@@ -45,7 +53,7 @@ api.interceptors.response.use(
 );
 
 // ============================================================
-// USER API ENDPOINTS
+// USER AUTH API ENDPOINTS
 // ============================================================
 export const userApi = {
   register: (data: { email: string; password: string }) =>
@@ -61,6 +69,47 @@ export const userApi = {
     api.post("/users/reset-password", data),
 
   getProfile: () => api.get("/users/profile"),
+};
+
+// ============================================================
+// DASHBOARD API ENDPOINT
+// ============================================================
+export const dashboardApi = {
+  getAll: () => api.get("/users/dashboard"),
+};
+
+// ============================================================
+// DAILY JOURNAL CREATE ENDPOINTS
+// ============================================================
+export const journalApi = {
+  create: (data: {
+    mood: string;
+    moodEmoji: string;
+    moodColor: string;
+    dateTime: string;
+    feeling: string;
+    stressLevel: number;
+    energyLevel: number;
+    sleepHours: number;
+    tags: string[];
+  }) => api.post("/users/daily-journal", data),
+};
+
+// ============================================================
+// HISTORY API ENDPOINT
+// ============================================================
+export const historyApi = {
+  getAll: () => api.get("/users/history"),
+};
+
+// ============================================================
+// AI ASSISTANT API ENDPOINT
+// ============================================================
+export const aiAssistantApi = {
+  chat: (data: {
+    message: string;
+  }) =>
+    api.post("/users/ai-assistant", data),
 };
 
 export default api;

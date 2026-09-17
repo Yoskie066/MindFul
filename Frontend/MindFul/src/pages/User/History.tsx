@@ -29,8 +29,10 @@ import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import { historyApi } from "../../services/api";
 
 interface JournalEntry {
+  id?: number;
   mood: string;
   moodEmoji: string;
   moodColor: string;
@@ -55,11 +57,18 @@ export default function History() {
   const [detailsIndex, setDetailsIndex] = useState<number | null>(null);
 
   // ============================================================
-  // LOAD ENTRIES FROM LOCALSTORAGE
+  // LOAD ENTRIES FROM API
   // ============================================================
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("journalEntries") || "[]");
-    setEntries([...stored].reverse());
+    const fetchHistory = async () => {
+      try {
+        const res = await historyApi.getAll();
+        setEntries(res.data.entries || []);
+      } catch (err) {
+        console.error("Failed to fetch history:", err);
+      }
+    };
+    fetchHistory();
   }, []);
 
   const formatDateTime = (dateTimeStr: string) => {
@@ -165,29 +174,6 @@ export default function History() {
           >
             No journal entries yet
           </Typography>
-          <Typography sx={{ fontSize: "0.95rem", color: "#5A7D96", mb: 3 }}>
-            Start by picking a mood on your Dashboard.
-          </Typography>
-          <Button
-            variant="contained"
-            disableElevation
-            onClick={() => (window.location.href = "/dashboard")}
-            sx={{
-              minHeight: 44,
-              px: 4,
-              borderRadius: 3,
-              fontWeight: 700,
-              textTransform: "none",
-              background: "linear-gradient(135deg, #1976D2 0%, #42A5F5 100%)",
-              boxShadow: "0 8px 28px rgba(25, 118, 210, 0.35)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #0D47A1 0%, #1976D2 100%)",
-                transform: "translateY(-2px)",
-              },
-            }}
-          >
-            Go to Dashboard
-          </Button>
         </Paper>
       )}
 
@@ -204,7 +190,7 @@ export default function History() {
 
           return (
             <Paper
-              key={index}
+              key={entry.id ?? index}
               elevation={0}
               sx={{
                 borderRadius: { xs: 3, sm: 4 },

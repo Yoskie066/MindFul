@@ -7,9 +7,12 @@ import {
   Paper,
   TextField,
   Typography,
-  Alert,
   CircularProgress,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import GoogleIcon from "@mui/icons-material/Google";
 import { userApi } from "../../../../services/api";
 
@@ -22,14 +25,17 @@ export default function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"success" | "error">("success");
+  const [modalTitle, setModalTitle] = useState("");
 
   // ============================================================
   // HANDLE LOGIN
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
 
     try {
@@ -39,11 +45,26 @@ export default function UserLogin() {
       localStorage.setItem("userToken", token);
       localStorage.setItem("userData", JSON.stringify(user));
 
-      navigate("/dashboard");
+      // Success modal 
+      setModalType("success");
+      setModalTitle("Successful Login");
+      setModalOpen(true);
+
+      setTimeout(() => {
+        setModalOpen(false);
+        navigate("/dashboard");
+      }, 2000);
     } catch (err: any) {
       console.error("Login error:", err);
-      const message = err.response?.data?.message || "Login failed. Please try again.";
-      setError(message);
+
+      // Error modal 
+      setModalType("error");
+      setModalTitle("Login Failed");
+      setModalOpen(true);
+
+      setTimeout(() => {
+        setModalOpen(false);
+      }, 2000);
     } finally {
       setLoading(false);
     }
@@ -95,13 +116,11 @@ export default function UserLogin() {
           Login
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+        >
           {/* ---------- EMAIL FIELD ---------- */}
           <Typography
             component="label"
@@ -139,7 +158,7 @@ export default function UserLogin() {
             }}
           />
 
-          {/* ---------- PASSWORD FIELD  ---------- */}
+          {/* ---------- PASSWORD FIELD ---------- */}
           <Typography
             component="label"
             htmlFor="password"
@@ -177,7 +196,7 @@ export default function UserLogin() {
             }}
           />
 
-          {/* ---------- FORGOT PASSWORD BUTTON ---------- */}
+          {/* ---------- FORGOT PASSWORD ---------- */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
             <Button
               component={Link}
@@ -221,9 +240,7 @@ export default function UserLogin() {
                 boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
                 transform: "translateY(-1px)",
               },
-              "&.Mui-disabled": {
-                backgroundColor: "#90CAF9",
-              },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : "LOGIN"}
@@ -263,9 +280,7 @@ export default function UserLogin() {
                 boxShadow: "0 6px 20px rgba(21, 101, 192, 0.35)",
                 transform: "translateY(-1px)",
               },
-              "&.Mui-disabled": {
-                backgroundColor: "#90CAF9",
-              },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
             REGISTER
@@ -313,6 +328,55 @@ export default function UserLogin() {
           </Button>
         </Box>
       </Paper>
+
+      {/* ============================================================ */}
+      {/* MODAL Success  */}
+      {/* ============================================================ */}
+      <Dialog
+        open={modalOpen}
+        maxWidth="xs"
+        fullWidth
+        disableEscapeKeyDown
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              p: 1,
+              textAlign: "center",
+            },
+          },
+        }}
+      >
+        <DialogContent sx={{ pt: 3, pb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 2,
+            }}
+          >
+            {modalType === "success" ? (
+              <CheckCircleRoundedIcon
+                sx={{
+                  fontSize: 64,
+                  color: "#1976D2",
+                }}
+              />
+            ) : (
+              <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
+            )}
+          </Box>
+          <Typography
+            sx={{
+              fontSize: "1.3rem",
+              fontWeight: 800,
+              color: "#0D3654",
+            }}
+          >
+            {modalTitle}
+          </Typography>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
