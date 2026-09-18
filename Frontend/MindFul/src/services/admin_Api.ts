@@ -13,16 +13,14 @@ export const admin_Api = axios.create({
 });
 
 // ============================================================
-// REQUEST INTERCEPTOR - Add Admin Token
+// REQUEST INTERCEPTOR 
 // ============================================================
 admin_Api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("adminToken");
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   (error) => Promise.reject(error)
@@ -33,7 +31,6 @@ admin_Api.interceptors.request.use(
 // ============================================================
 admin_Api.interceptors.response.use(
   (response) => response,
-
   (error) => {
     const url = error.config?.url || "";
 
@@ -46,7 +43,6 @@ admin_Api.interceptors.response.use(
     if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem("adminToken");
       localStorage.removeItem("adminData");
-
       window.location.href = "/admin/login";
     }
 
@@ -58,26 +54,55 @@ admin_Api.interceptors.response.use(
 // ADMIN AUTH API ENDPOINT
 // ============================================================
 export const adminApi = {
-  register: (data: {
-    email: string;
-    password: string;
-  }) => admin_Api.post("/admin-register", data),
+  register: (data: { email: string; password: string }) =>
+    admin_Api.post("/admin-register", data),
 
-  login: (data: {
-    email: string;
-    password: string;
-  }) => admin_Api.post("/admin-login", data),
+  login: (data: { email: string; password: string }) =>
+    admin_Api.post("/admin-login", data),
 
-  forgotPassword: (data: {
-    email: string;
-  }) => admin_Api.post("/admin-forgot-password", data),
+  logout: () => admin_Api.post("/admin-logout"),
 
-  resetPassword: (data: {
-    token: string;
-    newPassword: string;
-  }) => admin_Api.post("/admin-reset-password", data),
+  heartbeat: () => admin_Api.get("/admin-profile"),  
+
+  forgotPassword: (data: { email: string }) =>
+    admin_Api.post("/admin-forgot-password", data),
+
+  resetPassword: (data: { token: string; newPassword: string }) =>
+    admin_Api.post("/admin-reset-password", data),
 
   getProfile: () => admin_Api.get("/admin-profile"),
+};
+
+// ============================================================
+// USER MANAGEMENT 
+// ============================================================
+export const userManagementApi = {
+  getAll: (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    role?: string;
+  }) => admin_Api.get("/accounts", { params }),
+
+  delete: (role: "user" | "admin", id: number) =>
+    admin_Api.delete(`/accounts/${role}/${id}`),
+};
+
+// ============================================================
+// JOURNAL MANAGEMENT API ENDPOINT
+// ============================================================
+export const journalManagementApi = {
+  getAll: (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    mood?: string;
+  }) => admin_Api.get("/journals", { params }),
+
+  getById: (id: number) => admin_Api.get(`/journals/${id}`),
+
+  delete: (id: number) => admin_Api.delete(`/journals/${id}`),
 };
 
 export default admin_Api;

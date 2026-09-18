@@ -12,6 +12,8 @@ model User {
   password           String
   resetToken         String?  @db.VarChar(255)
   resetTokenExpiry   DateTime?
+  status             String   @default("offline") @db.VarChar(20)
+  lastSeen           DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -26,6 +28,8 @@ model Admin {
   password           String
   resetToken         String?  @db.VarChar(255)
   resetTokenExpiry   DateTime?
+  status             String   @default("offline") @db.VarChar(20)
+  lastSeen           DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

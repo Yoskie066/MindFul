@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
+import prisma from '../../config/prisma.js';
 import {
   createAdmin,
   findAdminByEmail,
@@ -45,10 +46,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({
       message: 'Admin registered successfully',
-      admin: {
-        id: admin.id,
-        email: admin.email,
-      },
+      admin: { id: admin.id, email: admin.email },
       token,
     });
   } catch (error) {
@@ -60,7 +58,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ============================================================
-// ADMIN LOGIN
+// ADMIN LOGIN  → marks admin ONLINE
 // ============================================================
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -87,14 +85,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    //  Mark as ONLINE
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: { status: 'online', lastSeen: new Date() },
+    });
+
     const token = generateAdminToken(admin);
 
     res.status(200).json({
       message: 'Login successful',
-      admin: {
-        id: admin.id,
-        email: admin.email,
-      },
+      admin: { id: admin.id, email: admin.email },
       token,
     });
   } catch (error) {
@@ -106,12 +107,34 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ============================================================
+// ADMIN LOGOUT  → marks admin OFFLINE
+// ============================================================
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const adminId = req.admin?.id;
+    if (!adminId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    await prisma.admin.update({
+      where: { id: adminId },
+      data: { status: 'offline', lastSeen: new Date() },
+    });
+
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Logout failed',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+};
+
+// ============================================================
 // ADMIN FORGOT PASSWORD
 // ============================================================
-export const forgotPassword = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = forgotPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -150,10 +173,7 @@ export const forgotPassword = async (
 // ============================================================
 // ADMIN RESET PASSWORD
 // ============================================================
-export const resetPassword = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = resetPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -175,9 +195,7 @@ export const resetPassword = async (
     await updateAdminPassword(admin.id, newPassword);
     await clearAdminResetToken(admin.id);
 
-    res.status(200).json({
-      message: 'Password reset successfully',
-    });
+    res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
     res.status(500).json({
       message: 'Reset password failed',
@@ -187,28 +205,19 @@ export const resetPassword = async (
 };
 
 // ============================================================
-// GET ADMIN PROFILE 
+// GET ADMIN PROFILE
 // ============================================================
-export const getProfile = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const getProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const adminId = req.admin?.id;
-
     if (!adminId) {
-      res.status(401).json({
-        message: 'Unauthorized',
-      });
+      res.status(401).json({ message: 'Unauthorized' });
       return;
     }
 
     const admin = await findAdminById(adminId);
-
     if (!admin) {
-      res.status(404).json({
-        message: 'Admin not found',
-      });
+      res.status(404).json({ message: 'Admin not found' });
       return;
     }
 

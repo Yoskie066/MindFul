@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import crypto from 'crypto';
+import prisma from '../../config/prisma.js';
 import {
   createUser,
   findUserByEmail,
@@ -25,9 +26,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ 
-        message: 'Validation error', 
-        errors: parsed.error.issues  
+      res.status(400).json({
+        message: 'Validation error',
+        errors: parsed.error.issues,
       });
       return;
     }
@@ -45,27 +46,27 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({
       message: 'User registered successfully',
-      user: {
-        id: user.id,
-        email: user.email,
-      },
+      user: { id: user.id, email: user.email },
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Registration failed', error });
+    res.status(500).json({
+      message: 'Registration failed',
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };
 
 // ============================================================
-// USER LOGIN
+// USER LOGIN  → marks user ONLINE
 // ============================================================
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ 
-        message: 'Validation error', 
-        errors: parsed.error.issues  
+      res.status(400).json({
+        message: 'Validation error',
+        errors: parsed.error.issues,
       });
       return;
     }
@@ -84,22 +85,48 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // Mark as ONLINE
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { status: 'online', lastSeen: new Date() },
+    });
+
     const token = generateUserToken(user);
 
     res.status(200).json({
       message: 'Login successful',
-      user: {
-        id: user.id,
-        email: user.email,
-      },
+      user: { id: user.id, email: user.email },
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Login failed', error });
-
     res.status(500).json({
-    message: "Registration failed",
-    error: error instanceof Error ? error.message : error,
+      message: 'Login failed',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+};
+
+// ============================================================
+// USER LOGOUT  → marks user OFFLINE
+// ============================================================
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { status: 'offline', lastSeen: new Date() },
+    });
+
+    res.status(200).json({ message: 'Logout successful' });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Logout failed',
+      error: error instanceof Error ? error.message : error,
     });
   }
 };
@@ -111,9 +138,9 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
   try {
     const parsed = forgotPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ 
-        message: 'Validation error', 
-        errors: parsed.error.issues  
+      res.status(400).json({
+        message: 'Validation error',
+        errors: parsed.error.issues,
       });
       return;
     }
@@ -136,7 +163,10 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
       resetToken,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Forgot password failed', error });
+    res.status(500).json({
+      message: 'Forgot password failed',
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };
 
@@ -147,9 +177,9 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
   try {
     const parsed = resetPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ 
-        message: 'Validation error', 
-        errors: parsed.error.issues  
+      res.status(400).json({
+        message: 'Validation error',
+        errors: parsed.error.issues,
       });
       return;
     }
@@ -165,21 +195,19 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     await updateUserPassword(user.id, newPassword);
     await clearUserResetToken(user.id);
 
-    res.status(200).json({ 
-      message: 'Password reset successfully' 
-    });
+    res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Reset password failed', error });
+    res.status(500).json({
+      message: 'Reset password failed',
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };
 
 // ============================================================
-// GET USER PROFILE 
+// GET USER PROFILE
 // ============================================================
-export const getProfile = async (
-  req: Request, 
-  res: Response
-): Promise<void> => {
+export const getProfile = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -200,6 +228,9 @@ export const getProfile = async (
       updatedAt: user.updatedAt,
     });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to get profile', error });
+    res.status(500).json({
+      message: 'Failed to get profile',
+      error: error instanceof Error ? error.message : error,
+    });
   }
 };

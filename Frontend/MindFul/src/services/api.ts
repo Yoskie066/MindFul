@@ -13,16 +13,14 @@ const api = axios.create({
 });
 
 // ============================================================
-// REQUEST INTERCEPTOR - Add token to headers
+// REQUEST INTERCEPTOR 
 // ============================================================
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("userToken");
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   (error) => Promise.reject(error)
@@ -45,7 +43,6 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem("userToken");
       localStorage.removeItem("userData");
-
       window.location.href = "/login";
     }
 
@@ -57,27 +54,25 @@ api.interceptors.response.use(
 // USER AUTH API ENDPOINT
 // ============================================================
 export const userApi = {
-  register: (data: {
-    email: string;
-    password: string;
-  }) => api.post("/register", data),
+  register: (data: { email: string; password: string }) =>
+    api.post("/register", data),
 
-  login: (data: {
-    email: string;
-    password: string;
-  }) => api.post("/login", data),
+  login: (data: { email: string; password: string }) =>
+    api.post("/login", data),
 
-  forgotPassword: (data: {
-    email: string;
-  }) => api.post("/forgot-password", data),
+  logout: () => api.post("/logout"),
 
-  resetPassword: (data: {
-    token: string;
-    newPassword: string;
-  }) => api.post("/reset-password", data),
+  heartbeat: () => api.post("/profile"),   
+
+  forgotPassword: (data: { email: string }) =>
+    api.post("/forgot-password", data),
+
+  resetPassword: (data: { token: string; newPassword: string }) =>
+    api.post("/reset-password", data),
 
   getProfile: () => api.get("/profile"),
 };
+
 
 // ============================================================
 // DASHBOARD API ENDPOINT
@@ -114,9 +109,7 @@ export const historyApi = {
 // AI ASSISTANT API ENDPOINT
 // ============================================================
 export const aiAssistantApi = {
-  chat: (data: {
-    message: string;
-  }) => api.post("/ai-assistant", data),
+  chat: (data: { message: string }) => api.post("/ai-assistant", data),
 };
 
 export default api;

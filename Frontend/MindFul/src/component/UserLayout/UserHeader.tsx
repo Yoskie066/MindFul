@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
@@ -16,6 +16,7 @@ import {
   useMediaQuery,
   useTheme,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
@@ -24,8 +25,10 @@ import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import SpaOutlinedIcon from "@mui/icons-material/SpaOutlined";
+import { userApi } from "../../services/api";
 
 const DRAWER_WIDTH = 260;
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function UserHeader() {
   const navigate = useNavigate();
@@ -34,19 +37,70 @@ export default function UserHeader() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const userData = JSON.parse(localStorage.getItem("userData") || "{}");
   const userEmail = userData?.email || "User";
   const userInitial = userEmail.charAt(0).toUpperCase();
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("userData");
-    navigate("/login");
+  // ============================================================
+  // HEARTBEAT — keeps user online every 60 seconds
+  // ============================================================
+  useEffect(() => {
+    const token = localStorage.getItem("userToken");
+    if (!token) return;
+
+    // Fire once on mount
+    userApi.heartbeat().catch(() => {});
+
+    const interval = setInterval(() => {
+      if (localStorage.getItem("userToken")) {
+        userApi.heartbeat().catch(() => {});
+      }
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // ============================================================
+  // BEFOREUNLOAD — mark offline if tab/browser closed
+  // ============================================================
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const token = localStorage.getItem("userToken");
+      if (!token) return;
+      fetch(`${API_BASE_URL}/users/logout`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        keepalive: true,
+      }).catch(() => {});
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
+
+  // ============================================================
+  // LOGOUT — call API first (status → offline), then clear storage
+  // ============================================================
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await userApi.logout();
+    } catch (err) {
+      console.error("Logout API failed:", err);
+    } finally {
+      localStorage.removeItem("userToken");
+      localStorage.removeItem("userData");
+      setLoggingOut(false);
+      navigate("/login");
+    }
   };
 
   const navItems = [
@@ -59,7 +113,6 @@ export default function UserHeader() {
 
   const drawerContent = (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* ----- Logo (transparent) ----- */}
       <Box
         sx={{
           display: "flex",
@@ -75,43 +128,42 @@ export default function UserHeader() {
         </Typography>
       </Box>
 
-      {/* ----- Navigation (transparent) ----- */}
       <List sx={{ flex: 1, pt: 1, overflow: "auto" }}>
         {navItems.map((item) => {
-          const isActive = !item.isLogout && item.path !== null && location.pathname === item.path;
+          const isActive =
+            !item.isLogout && item.path !== null && location.pathname === item.path;
 
-          // Logout item – special styling, no gradient hover
           if (item.isLogout) {
             return (
               <ListItem key="logout" disablePadding>
                 <ListItemButton
                   onClick={handleLogout}
+                  disabled={loggingOut}
                   sx={{
                     borderRadius: 2,
                     mx: 1,
                     mb: 0.5,
                     color: "#D32F2F",
-                    "&:hover": { bgcolor: "rgba(211, 47, 47, 0.12)" },
+                    "&:hover": { bgcolor: "rgba(211,47,47,0.12)" },
+                    "&.Mui-disabled": { opacity: 0.7 },
                   }}
                 >
                   <ListItemIcon sx={{ color: "#D32F2F" }}>
-                    <LogoutRoundedIcon />
+                    {loggingOut ? (
+                      <CircularProgress size={20} sx={{ color: "#D32F2F" }} />
+                    ) : (
+                      <LogoutRoundedIcon />
+                    )}
                   </ListItemIcon>
                   <ListItemText
-                    primary="Logout"
-                    sx={{
-                      "& .MuiTypography-root": {
-                        fontSize: "0.95rem",
-                        fontWeight: 500,
-                      },
-                    }}
+                    primary={loggingOut ? "Logging out..." : "Logout"}
+                    sx={{ "& .MuiTypography-root": { fontSize: "0.95rem", fontWeight: 500 } }}
                   />
                 </ListItemButton>
               </ListItem>
             );
           }
 
-          // Regular items 
           return (
             <ListItem key={item.label} disablePadding>
               <ListItemButton
@@ -125,13 +177,11 @@ export default function UserHeader() {
                   mx: 1,
                   mb: 0.5,
                   "&.Mui-selected": {
-                    bgcolor: "rgba(255, 255, 255, 0.35)",
+                    bgcolor: "rgba(255,255,255,0.35)",
                     "& .MuiListItemIcon-root": { color: "#1976D2" },
                     "& .MuiTypography-root": { color: "#1976D2", fontWeight: 700 },
                   },
-                  "&:hover": {
-                    bgcolor: "rgba(255, 255, 255, 0.25)", 
-                  },
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
                 }}
               >
                 <ListItemIcon sx={{ color: isActive ? "#1976D2" : "#0D3654" }}>
@@ -153,7 +203,6 @@ export default function UserHeader() {
         })}
       </List>
 
-      {/* ----- Profile (transparent) ----- */}
       <Divider sx={{ borderColor: "rgba(255,255,255,0.2)" }} />
       <Box
         sx={{
@@ -164,14 +213,7 @@ export default function UserHeader() {
           borderTop: "1px solid rgba(255,255,255,0.2)",
         }}
       >
-        <Avatar
-          sx={{
-            width: 40,
-            height: 40,
-            bgcolor: "#1976D2",
-            color: "#fff",
-          }}
-        >
+        <Avatar sx={{ width: 40, height: 40, bgcolor: "#1976D2", color: "#fff" }}>
           {userInitial}
         </Avatar>
         <Box sx={{ overflow: "hidden" }}>
@@ -194,7 +236,6 @@ export default function UserHeader() {
 
   return (
     <Box sx={{ display: "flex" }}>
-      {/* ----- Mobile AppBar (may gradient) ----- */}
       <AppBar
         position="fixed"
         elevation={0}
@@ -207,7 +248,11 @@ export default function UserHeader() {
         }}
       >
         <Toolbar>
-          <IconButton edge="start" onClick={handleDrawerToggle} sx={{ mr: 2, color: "#0D3654" }}>
+          <IconButton
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, color: "#0D3654" }}
+          >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" fontWeight={800} sx={{ flexGrow: 1, color: "#0D3654" }}>
@@ -227,7 +272,6 @@ export default function UserHeader() {
         </Toolbar>
       </AppBar>
 
-      {/* ----- Drawer ----- */}
       <Drawer
         variant={isMobile ? "temporary" : "permanent"}
         open={isMobile ? mobileOpen : true}
@@ -249,7 +293,6 @@ export default function UserHeader() {
         {drawerContent}
       </Drawer>
 
-      {/* ----- Spacer ----- */}
       <Box
         component="nav"
         sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
