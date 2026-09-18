@@ -18,16 +18,16 @@ import {
   Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
-import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
+import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
+import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
+import BookRoundedIcon from "@mui/icons-material/BookRounded";
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import SpaOutlinedIcon from "@mui/icons-material/SpaOutlined";
 
 const DRAWER_WIDTH = 260;
 
-export default function UserHeader() {
+export default function AdminHeader() {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
@@ -35,31 +35,52 @@ export default function UserHeader() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-  const userEmail = userData?.email || "User";
-  const userInitial = userEmail.charAt(0).toUpperCase();
+  const adminData = JSON.parse(localStorage.getItem("adminData") || "{}");
+  const adminEmail = adminData?.email || "Admin";
+  const adminInitial = adminEmail.charAt(0).toUpperCase();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("userData");
-    navigate("/login");
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminData");
+    navigate("/admin-login");
   };
 
   const navItems = [
-    { label: "Dashboard", icon: <DashboardRoundedIcon />, path: "/dashboard" },
-    { label: "Daily Journal", icon: <EditNoteRoundedIcon />, path: "/daily-journal" },
-    { label: "History", icon: <HistoryRoundedIcon />, path: "/history" },
-    { label: "AI Assistant", icon: <SmartToyRoundedIcon />, path: "/ai-assistant" },
-    { label: "Logout", icon: <LogoutRoundedIcon />, path: null, isLogout: true },
+    {
+      label: "Analytics",
+      icon: <BarChartRoundedIcon />,
+      path: "/analytics",
+    },
+    {
+      label: "User Management",
+      icon: <PeopleAltRoundedIcon />,
+      path: "/user-management",
+    },
+    {
+      label: "Journal Management",
+      icon: <BookRoundedIcon />,
+      path: "/journal-management",
+    },
+    {
+      label: "AI Management",
+      icon: <SmartToyRoundedIcon />,
+      path: "/ai-management",
+    },
+    {
+      label: "Logout",
+      icon: <LogoutRoundedIcon />,
+      path: null,
+      isLogout: true,
+    },
   ];
 
   const drawerContent = (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* ----- Logo (transparent) ----- */}
+      {/* ----- Logo (matches UserHeader) ----- */}
       <Box
         sx={{
           display: "flex",
@@ -78,7 +99,10 @@ export default function UserHeader() {
       {/* ----- Navigation (transparent) ----- */}
       <List sx={{ flex: 1, pt: 1, overflow: "auto" }}>
         {navItems.map((item) => {
-          const isActive = !item.isLogout && item.path !== null && location.pathname === item.path;
+          const isActive =
+            !item.isLogout &&
+            item.path !== null &&
+            location.pathname === item.path;
 
           // Logout item – special styling, no gradient hover
           if (item.isLogout) {
@@ -111,7 +135,7 @@ export default function UserHeader() {
             );
           }
 
-          // Regular items 
+          // Regular items
           return (
             <ListItem key={item.label} disablePadding>
               <ListItemButton
@@ -127,10 +151,13 @@ export default function UserHeader() {
                   "&.Mui-selected": {
                     bgcolor: "rgba(255, 255, 255, 0.35)",
                     "& .MuiListItemIcon-root": { color: "#1976D2" },
-                    "& .MuiTypography-root": { color: "#1976D2", fontWeight: 700 },
+                    "& .MuiTypography-root": {
+                      color: "#1976D2",
+                      fontWeight: 700,
+                    },
                   },
                   "&:hover": {
-                    bgcolor: "rgba(255, 255, 255, 0.25)", 
+                    bgcolor: "rgba(255, 255, 255, 0.25)",
                   },
                 }}
               >
@@ -172,7 +199,7 @@ export default function UserHeader() {
             color: "#fff",
           }}
         >
-          {userInitial}
+          {adminInitial}
         </Avatar>
         <Box sx={{ overflow: "hidden" }}>
           <Typography
@@ -185,7 +212,7 @@ export default function UserHeader() {
               textOverflow: "ellipsis",
             }}
           >
-            {userEmail}
+            {adminEmail}
           </Typography>
         </Box>
       </Box>
@@ -207,10 +234,18 @@ export default function UserHeader() {
         }}
       >
         <Toolbar>
-          <IconButton edge="start" onClick={handleDrawerToggle} sx={{ mr: 2, color: "#0D3654" }}>
+          <IconButton
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, color: "#0D3654" }}
+          >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" fontWeight={800} sx={{ flexGrow: 1, color: "#0D3654" }}>
+          <Typography
+            variant="h6"
+            fontWeight={800}
+            sx={{ flexGrow: 1, color: "#0D3654" }}
+          >
             MindFul
           </Typography>
           <Avatar
@@ -222,7 +257,7 @@ export default function UserHeader() {
               fontSize: "0.9rem",
             }}
           >
-            {userInitial}
+            {adminInitial}
           </Avatar>
         </Toolbar>
       </AppBar>

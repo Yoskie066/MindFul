@@ -2,78 +2,87 @@ import { useState } from "react";
 import {
   Box,
   Button,
-  IconButton,
-  InputAdornment,
   Paper,
   TextField,
   Typography,
+  CircularProgress,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import { Link, useNavigate } from "react-router-dom";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
+import { adminApi } from "../../../../services/admin_Api";
 
 export default function AdminForgotPassword() {
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
+
+  const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<"success" | "error">("success");
+  const [modalTitle, setModalTitle] = useState("");
 
   // ============================================================
-  // NEW PASSWORD FIELD - Toggle Visibility (using slotProps for MUI v9)
+  // HANDLE RESET PASSWORD
   // ============================================================
-  const newPasswordSlotProps = {
-    input: {
-      endAdornment: (
-        <InputAdornment position="end">
-          <IconButton
-            edge="end"
-            size="small"
-            onClick={() => setShowNewPassword((value) => !value)}
-            sx={{
-              color: "#5D9DCA",
-              "&:hover": { color: "#1976D2" },
-            }}
-          >
-            {showNewPassword ? (
-              <VisibilityOutlinedIcon fontSize="small" />
-            ) : (
-              <VisibilityOffOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </InputAdornment>
-      ),
-    },
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // ============================================================
-  // CONFIRM PASSWORD FIELD - Toggle Visibility
-  // ============================================================
-  const confirmPasswordSlotProps = {
-    input: {
-      endAdornment: (
-        <InputAdornment position="end">
-          <IconButton
-            edge="end"
-            size="small"
-            onClick={() => setShowConfirmPassword((value) => !value)}
-            sx={{
-              color: "#5D9DCA",
-              "&:hover": { color: "#1976D2" },
-            }}
-          >
-            {showConfirmPassword ? (
-              <VisibilityOutlinedIcon fontSize="small" />
-            ) : (
-              <VisibilityOffOutlinedIcon fontSize="small" />
-            )}
-          </IconButton>
-        </InputAdornment>
-      ),
-    },
+    if (newPassword !== confirmPassword) {
+      setModalType("error");
+      setModalTitle("Reset Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setModalType("error");
+      setModalTitle("Reset Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Step 1: Request reset token
+      const forgotResponse = await adminApi.forgotPassword({ email });
+      const resetToken = forgotResponse.data.resetToken;
+
+      // Step 2: Reset password using the token
+      await adminApi.resetPassword({ token: resetToken, newPassword });
+
+      setModalType("success");
+      setModalTitle("Password Reset Successful");
+      setModalOpen(true);
+
+      setTimeout(() => {
+        setModalOpen(false);
+        navigate("/admin-login");
+      }, 2000);
+    } catch (err: any) {
+      console.error("Admin reset password error:", err);
+
+      setModalType("error");
+      setModalTitle("Reset Failed");
+      setModalOpen(true);
+
+      setTimeout(() => {
+        setModalOpen(false);
+      }, 2000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    // ============================================================
-    // MAIN CONTAINER - Full viewport, centered, light blue gradient
-    // ============================================================
     <Box
       sx={{
         minHeight: "100vh",
@@ -85,9 +94,6 @@ export default function AdminForgotPassword() {
           "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
       }}
     >
-      {/* ============================================================
-          ADMIN FORGOT PASSWORD CARD - Glass-morphism paper
-          ============================================================ */}
       <Paper
         elevation={0}
         sx={{
@@ -108,9 +114,6 @@ export default function AdminForgotPassword() {
           overflow: "hidden",
         }}
       >
-        {/* ============================================================
-            PAGE TITLE
-            ============================================================ */}
         <Typography
           align="center"
           sx={{
@@ -124,11 +127,9 @@ export default function AdminForgotPassword() {
           Admin Forgot Password
         </Typography>
 
-        {/* ============================================================
-            ADMIN FORGOT PASSWORD FORM
-            ============================================================ */}
         <Box
           component="form"
+          onSubmit={handleSubmit}
           sx={{
             display: "flex",
             flexDirection: "column",
@@ -156,6 +157,10 @@ export default function AdminForgotPassword() {
             fullWidth
             placeholder="admin@mindful.com"
             size="small"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
@@ -195,11 +200,14 @@ export default function AdminForgotPassword() {
           </Typography>
           <TextField
             id="newPassword"
-            type={showNewPassword ? "text" : "password"}
+            type="password"
             fullWidth
             placeholder="••••••"
             size="small"
-            slotProps={newPasswordSlotProps}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
@@ -239,11 +247,14 @@ export default function AdminForgotPassword() {
           </Typography>
           <TextField
             id="confirmPassword"
-            type={showConfirmPassword ? "text" : "password"}
+            type="password"
             fullWidth
             placeholder="••••••"
             size="small"
-            slotProps={confirmPasswordSlotProps}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            disabled={loading}
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 2.5,
@@ -268,9 +279,10 @@ export default function AdminForgotPassword() {
           {/* ---------- RESET PASSWORD BUTTON ---------- */}
           <Button
             fullWidth
-            type="button"
+            type="submit"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               mt: { xs: 2, sm: 2.5 },
               minHeight: { xs: 44, sm: 46 },
@@ -286,9 +298,14 @@ export default function AdminForgotPassword() {
                 boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
-            RESET PASSWORD
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "RESET PASSWORD"
+            )}
           </Button>
 
           {/* ---------- LOGIN SECTION ---------- */}
@@ -306,10 +323,11 @@ export default function AdminForgotPassword() {
           <Button
             fullWidth
             component={Link}
-            to="/admin-login" 
+            to="/admin-login"
             type="button"
             variant="contained"
             disableElevation
+            disabled={loading}
             sx={{
               minHeight: { xs: 44, sm: 46 },
               borderRadius: 2.5,
@@ -324,21 +342,62 @@ export default function AdminForgotPassword() {
                 boxShadow: "0 6px 20px rgba(21, 101, 192, 0.35)",
                 transform: "translateY(-1px)",
               },
+              "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
             LOGIN
           </Button>
         </Box>
-        {/* ============================================================
-            END OF ADMIN FORGOT PASSWORD FORM
-            ============================================================ */}
       </Paper>
-      {/* ============================================================
-          END OF ADMIN FORGOT PASSWORD CARD
-          ============================================================ */}
+
+      {/* ============================================================ */}
+      {/* MODAL Success / Error */}
+      {/* ============================================================ */}
+      <Dialog
+        open={modalOpen}
+        maxWidth="xs"
+        fullWidth
+        disableEscapeKeyDown
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              p: 1,
+              textAlign: "center",
+            },
+          },
+        }}
+      >
+        <DialogContent sx={{ pt: 3, pb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: 2,
+            }}
+          >
+            {modalType === "success" ? (
+              <CheckCircleRoundedIcon
+                sx={{
+                  fontSize: 64,
+                  color: "#1976D2",
+                }}
+              />
+            ) : (
+              <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
+            )}
+          </Box>
+          <Typography
+            sx={{
+              fontSize: "1.3rem",
+              fontWeight: 800,
+              color: "#0D3654",
+            }}
+          >
+            {modalTitle}
+          </Typography>
+        </DialogContent>
+      </Dialog>
     </Box>
-    // ============================================================
-    // END OF MAIN CONTAINER
-    // ============================================================
   );
 }

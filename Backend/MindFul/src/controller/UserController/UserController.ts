@@ -10,17 +10,16 @@ import {
   clearUserResetToken,
   generateUserToken,
   comparePassword,
-} from '../../services/AuthService.js';
+} from '../../services/UserService.js';
 import {
   registerSchema,
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-} from '../../validators/AuthValidator.js';
+} from '../../validators/UserValidator.js';
 
 // ============================================================
 // USER REGISTER
-// POST /api/users/register
 // ============================================================
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -59,7 +58,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 // ============================================================
 // USER LOGIN
-// POST /api/users/login
 // ============================================================
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -108,7 +106,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 // ============================================================
 // USER FORGOT PASSWORD
-// POST /api/users/forgot-password
 // ============================================================
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -145,7 +142,6 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
 // ============================================================
 // USER RESET PASSWORD
-// POST /api/users/reset-password
 // ============================================================
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -178,10 +174,12 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 };
 
 // ============================================================
-// GET USER PROFILE (Protected)
-// GET /api/users/profile
+// GET USER PROFILE 
 // ============================================================
-export const getProfile = async (req: Request, res: Response): Promise<void> => {
+export const getProfile = async (
+  req: Request, 
+  res: Response
+): Promise<void> => {
   try {
     const userId = req.user?.id;
     if (!userId) {

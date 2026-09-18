@@ -4,12 +4,12 @@ import * as DailyJournalController from '../../controller/UserController/DailyJo
 import * as HistoryController from '../../controller/UserController/HistoryController.js';
 import * as DashboardController from '../../controller/UserController/DashboardController.js';
 import * as AI_AssistantController from '../../controller/UserController/AI_AssistantController.js';
-import { authenticate } from '../../middleware/verifyToken.js';
+import { authenticateUser } from '../../middleware/verifyUserToken.js';
 
 const router = Router();
 
 // ============================================================
-// AUTH ROUTES (Public)
+// AUTH ROUTES 
 // ============================================================
 router.post('/register', UserController.register);
 router.post('/login', UserController.login);
@@ -19,27 +19,27 @@ router.post('/reset-password', UserController.resetPassword);
 // ============================================================
 // USER PROFILE (Protected)
 // ============================================================
-router.get('/profile', authenticate, UserController.getProfile);
+router.get('/profile', authenticateUser, UserController.getProfile);
 
 // ============================================================
 // DASHBOARD (Protected)
 // ============================================================
-router.get('/dashboard', authenticate, DashboardController.getDashboard);
+router.get('/dashboard', authenticateUser, DashboardController.getDashboard);
 
 // ============================================================
 // DAILY JOURNAL (Protected)
 // ============================================================
-router.post('/daily-journal', authenticate, DailyJournalController.createEntry);
+router.post('/daily-journal', authenticateUser, DailyJournalController.createEntry);
 
 // ============================================================
 // HISTORY (Protected)
 // ============================================================
-router.get('/history', authenticate, HistoryController.getHistory);
+router.get('/history', authenticateUser, HistoryController.getHistory);
 
 // ============================================================
 // AI ASSISTANT (Protected)
 // ============================================================
-router.post('/ai-assistant', authenticate, AI_AssistantController.chatWithAI);
+router.post('/ai-assistant', authenticateUser, AI_AssistantController.chatWithAI);
 
 
 export default router;

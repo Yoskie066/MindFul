@@ -6,7 +6,7 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: `${API_BASE_URL}/users`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -29,22 +29,23 @@ api.interceptors.request.use(
 );
 
 // ============================================================
-// RESPONSE INTERCEPTOR 
+// RESPONSE INTERCEPTOR
 // ============================================================
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const url = error.config?.url || "";
-    const isAuthEndpoint =
-      url.includes("/users/login") ||
-      url.includes("/users/register") ||
-      url.includes("/users/forgot-password") ||
-      url.includes("/users/reset-password");
 
-  
+    const isAuthEndpoint =
+      url.includes("/login") ||
+      url.includes("/register") ||
+      url.includes("/forgot-password") ||
+      url.includes("/reset-password");
+
     if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem("userToken");
       localStorage.removeItem("userData");
+
       window.location.href = "/login";
     }
 
@@ -53,33 +54,40 @@ api.interceptors.response.use(
 );
 
 // ============================================================
-// USER AUTH API ENDPOINTS
+// USER AUTH API ENDPOINT
 // ============================================================
 export const userApi = {
-  register: (data: { email: string; password: string }) =>
-    api.post("/users/register", data),
+  register: (data: {
+    email: string;
+    password: string;
+  }) => api.post("/register", data),
 
-  login: (data: { email: string; password: string }) =>
-    api.post("/users/login", data),
+  login: (data: {
+    email: string;
+    password: string;
+  }) => api.post("/login", data),
 
-  forgotPassword: (data: { email: string }) =>
-    api.post("/users/forgot-password", data),
+  forgotPassword: (data: {
+    email: string;
+  }) => api.post("/forgot-password", data),
 
-  resetPassword: (data: { token: string; newPassword: string }) =>
-    api.post("/users/reset-password", data),
+  resetPassword: (data: {
+    token: string;
+    newPassword: string;
+  }) => api.post("/reset-password", data),
 
-  getProfile: () => api.get("/users/profile"),
+  getProfile: () => api.get("/profile"),
 };
 
 // ============================================================
 // DASHBOARD API ENDPOINT
 // ============================================================
 export const dashboardApi = {
-  getAll: () => api.get("/users/dashboard"),
+  getAll: () => api.get("/dashboard"),
 };
 
 // ============================================================
-// DAILY JOURNAL CREATE ENDPOINTS
+// DAILY JOURNAL CREATE ENDPOINT
 // ============================================================
 export const journalApi = {
   create: (data: {
@@ -92,14 +100,14 @@ export const journalApi = {
     energyLevel: number;
     sleepHours: number;
     tags: string[];
-  }) => api.post("/users/daily-journal", data),
+  }) => api.post("/daily-journal", data),
 };
 
 // ============================================================
 // HISTORY API ENDPOINT
 // ============================================================
 export const historyApi = {
-  getAll: () => api.get("/users/history"),
+  getAll: () => api.get("/history"),
 };
 
 // ============================================================
@@ -108,8 +116,7 @@ export const historyApi = {
 export const aiAssistantApi = {
   chat: (data: {
     message: string;
-  }) =>
-    api.post("/users/ai-assistant", data),
+  }) => api.post("/ai-assistant", data),
 };
 
 export default api;

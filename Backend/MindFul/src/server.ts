@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import userRoutes from './routes/UserRoutes/UserRoutes.js';
+import adminRoutes from './routes/AdminRoutes/AdminRoutes.js'
 import { errorHandler } from './middleware/errorHandler.js';
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 // ROUTES
 // ============================================================
 app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {
