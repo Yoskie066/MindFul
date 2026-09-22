@@ -18,6 +18,7 @@ model User {
   updatedAt          DateTime @updatedAt
 
   journalEntries     JournalEntry[]
+  aiConversations    AIConversation[]    
 
   @@map("users")
 }
@@ -37,7 +38,7 @@ model Admin {
 }
 
 // ============================================================
-// JOURNAL ENTRY 
+// JOURNAL ENTRY
 // ============================================================
 model JournalEntry {
   id           Int      @id @default(autoincrement())
@@ -60,4 +61,24 @@ model JournalEntry {
   @@index([userId, dateTime])
   @@index([userId, createdAt])
   @@map("journal_entries")
+}
+
+// ============================================================
+// AI CONVERSATION  (one row per user ↔ AI exchange)
+// ============================================================
+model AIConversation {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  userMessage      String   @db.Text
+  aiResponse       String   @db.Text
+  isError          Boolean  @default(false)
+  entriesAnalyzed  Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("ai_conversations")
 }

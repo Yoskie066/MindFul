@@ -238,7 +238,7 @@ export default function Journal_Management() {
               flex: { xs: "1 1 100%", sm: "0 0 auto" },
             }}
           >
-            <InputLabel>Mood Filter</InputLabel>
+            <InputLabel>Mood </InputLabel>
             <Select
               label="Mood Filter"
               value={moodFilter}

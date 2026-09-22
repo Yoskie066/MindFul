@@ -13,7 +13,7 @@ export const admin_Api = axios.create({
 });
 
 // ============================================================
-// REQUEST INTERCEPTOR 
+// REQUEST INTERCEPTOR
 // ============================================================
 admin_Api.interceptors.request.use(
   (config) => {
@@ -62,7 +62,7 @@ export const adminApi = {
 
   logout: () => admin_Api.post("/admin-logout"),
 
-  heartbeat: () => admin_Api.get("/admin-profile"),  
+  heartbeat: () => admin_Api.get("/admin-profile"),
 
   forgotPassword: (data: { email: string }) =>
     admin_Api.post("/admin-forgot-password", data),
@@ -74,7 +74,14 @@ export const adminApi = {
 };
 
 // ============================================================
-// USER MANAGEMENT 
+// ANALYTICS API ENDPOINT
+// ============================================================
+export const analyticsApi = {
+  getAll: () => admin_Api.get("/analytics"),
+};
+
+// ============================================================
+// USER MANAGEMENT API ENDPOINT
 // ============================================================
 export const userManagementApi = {
   getAll: (params: {
@@ -103,6 +110,22 @@ export const journalManagementApi = {
   getById: (id: number) => admin_Api.get(`/journals/${id}`),
 
   delete: (id: number) => admin_Api.delete(`/journals/${id}`),
+};
+
+// ============================================================
+// AI MANAGEMENT API ENDPOINT
+// ============================================================
+export const aiManagementApi = {
+  getAll: (params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    userId?: number;
+  }) => admin_Api.get("/ai-conversations", { params }),
+
+  getById: (id: number) => admin_Api.get(`/ai-conversations/${id}`),
+
+  delete: (id: number) => admin_Api.delete(`/ai-conversations/${id}`),
 };
 
 export default admin_Api;

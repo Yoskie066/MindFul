@@ -3,6 +3,7 @@ import {
   generateAIResponse,
   isMindfulnessRelated,
   getJournalEntriesFromDB,
+  saveAIConversation,
 } from '../../services/AIService.js';
 
 // ============================================================
@@ -28,15 +29,21 @@ export const chatWithAI = async (
     }
 
     // ============================================================
-    // STEP 1: READ from MySQL 
+    // STEP 1: READ from MySQL
     // ============================================================
     const entries = await getJournalEntriesFromDB(userId);
 
     if (!entries || entries.length === 0) {
-      res.status(400).json({
-        message:
-          "I can't analyze your wellness yet. Please enter a Daily Journal entry first",
+      const noEntriesMsg =
+        "I can't analyze your wellness yet. Please enter a Daily Journal entry first";
+
+      // Save even this exchange so admin can see
+      await saveAIConversation(userId, message, noEntriesMsg, {
+        isError: true,
+        entriesAnalyzed: 0,
       });
+
+      res.status(400).json({ message: noEntriesMsg });
       return;
     }
 
@@ -48,10 +55,16 @@ export const chatWithAI = async (
     const isRelevant = await isMindfulnessRelated(message);
 
     if (!isRelevant) {
-      res.status(400).json({
-        message:
-          "Sorry, I can only help with mindfulness, mood, stress, sleep, energy, journaling, and mental wellness. Please ask something related to your wellness journey",
+      const notRelevantMsg =
+        "Sorry, I can only help with mindfulness, mood, stress, sleep, energy, journaling, and mental wellness. Please ask something related to your wellness journey";
+
+      // Save the exchange
+      await saveAIConversation(userId, message, notRelevantMsg, {
+        isError: true,
+        entriesAnalyzed: entries.length,
       });
+
+      res.status(400).json({ message: notRelevantMsg });
       return;
     }
 
@@ -59,6 +72,14 @@ export const chatWithAI = async (
     // STEP 3: Generate AI response based on MySQL data
     // ============================================================
     const response = await generateAIResponse(message, entries);
+
+    // ============================================================
+    // STEP 4: Save the conversation
+    // ============================================================
+    await saveAIConversation(userId, message, response, {
+      isError: false,
+      entriesAnalyzed: entries.length,
+    });
 
     res.status(200).json({
       response,

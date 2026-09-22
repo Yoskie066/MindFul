@@ -115,12 +115,12 @@ Answer (YES or NO):`;
     const response = await tryGenerate(prompt);
     const cleaned = response.trim().toUpperCase();
     console.log(`Classification result: "${cleaned}"`);
-
-    // Strict: kailangan magsimula sa YES
+    
     return cleaned.startsWith("YES");
+    
   } catch (error) {
     console.error("Classification error:", error);
-    // Sa error, i-allow pa rin (para hindi ma-block ang legit user)
+
     return true;
   }
 };
@@ -155,6 +155,80 @@ const buildJournalSummary = (entries: JournalRow[]): string => {
         }`;
     })
     .join("\n");
+};
+
+// ============================================================
+// SAVE AI CONVERSATION TO DATABASE
+// ============================================================
+export const saveAIConversation = async (
+  userId: number,
+  userMessage: string,
+  aiResponse: string,
+  options: {
+    isError?: boolean;
+    entriesAnalyzed?: number;
+  } = {}
+) => {
+  try {
+    return await prisma.aIConversation.create({
+      data: {
+        userId,
+        userMessage,
+        aiResponse,
+        isError: options.isError ?? false,
+        entriesAnalyzed: options.entriesAnalyzed ?? 0,
+      },
+    });
+  } catch (err) {
+    console.error("Failed to save AI conversation:", err);
+    return null;
+  }
+};
+
+// ============================================================
+// GET ALL AI CONVERSATIONS (admin, with pagination & filters)
+// ============================================================
+export const getAllAIConversations = async (params: {
+  page: number;
+  limit: number;
+  search?: string;
+  userId?: number;
+}) => {
+  const { page, limit, search, userId } = params;
+  const skip = (page - 1) * limit;
+
+  const where: any = {};
+  if (userId) where.userId = userId;
+  if (search) {
+    where.OR = [
+      { userMessage: { contains: search } },
+      { aiResponse: { contains: search } },
+      { user: { email: { contains: search } } },
+    ];
+  }
+
+  const [conversations, total] = await Promise.all([
+    prisma.aIConversation.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, email: true } },
+      },
+    }),
+    prisma.aIConversation.count({ where }),
+  ]);
+
+  return {
+    conversations,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 };
 
 // ============================================================

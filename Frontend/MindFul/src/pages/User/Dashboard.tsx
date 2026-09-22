@@ -24,6 +24,11 @@ import LocalFireDepartmentRoundedIcon from "@mui/icons-material/LocalFireDepartm
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import QueryStatsRoundedIcon from "@mui/icons-material/QueryStatsRounded";
+import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
+import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
+import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import { dashboardApi } from "../../services/api";
 
 // ============================================================
@@ -55,6 +60,85 @@ const MOOD_SCORES: Record<string, number> = {
   Frustrated: 2,
 };
 
+// ============================================================
+// SECTION LABEL COMPONENT
+// ============================================================
+interface SectionLabelProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle?: string;
+  accent?: string;
+}
+
+const SectionLabel = ({
+  icon,
+  title,
+  subtitle,
+  accent = "#1976D2",
+}: SectionLabelProps) => (
+  <Box
+    sx={{
+      display: "flex",
+      alignItems: "center",
+      gap: 1.5,
+      mb: 2,
+      pl: 0.5,
+    }}
+  >
+    <Box
+      sx={{
+        width: 36,
+        height: 36,
+        borderRadius: 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: alpha(accent, 0.12),
+        color: accent,
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+    </Box>
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        sx={{
+          fontSize: { xs: "1rem", sm: "1.1rem" },
+          fontWeight: 800,
+          color: "#0D3654",
+          letterSpacing: "-0.01em",
+          lineHeight: 1.2,
+        }}
+      >
+        {title}
+      </Typography>
+      {subtitle && (
+        <Typography
+          sx={{
+            fontSize: "0.75rem",
+            color: "#7A96AD",
+            fontWeight: 500,
+            mt: 0.15,
+          }}
+        >
+          {subtitle}
+        </Typography>
+      )}
+    </Box>
+    <Box
+      sx={{
+        flex: 1,
+        height: 1,
+        background: `linear-gradient(90deg, ${alpha(accent, 0.25)}, transparent)`,
+        ml: 1,
+      }}
+    />
+  </Box>
+);
+
+// ============================================================
+// COMPONENT
+// ============================================================
 export default function Dashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
@@ -90,11 +174,11 @@ export default function Dashboard() {
         const res = await dashboardApi.getAll();
         setEntries(res.data.entries || []);
       } catch (err) {
-      console.error("Failed to fetch dashboard:", err);
-    }
-  };
-  fetchDashboard();
-}, []);
+        console.error("Failed to fetch dashboard:", err);
+      }
+    };
+    fetchDashboard();
+  }, []);
 
   const itemsPerSlide = isDesktop ? 4 : 2;
 
@@ -399,6 +483,7 @@ export default function Dashboard() {
           },
           textAlign: "center",
           position: "relative",
+          mb: 4,
         }}
       >
         <Typography
@@ -580,20 +665,23 @@ export default function Dashboard() {
       </Paper>
 
       {/* ============================================================ */}
-      {/* 1. QUICK STATS  */}
-      
+      {/* SECTION: QUICK STATS */}
       {/* ============================================================ */}
+      <SectionLabel
+        icon={<DashboardRoundedIcon sx={{ fontSize: 20 }} />}
+        title="Quick Stats"
+        accent="#1976D2"
+      />
       <Box
         sx={{
           display: "grid",
           gridTemplateColumns: {
-            xs: "1fr", 
+            xs: "1fr",
             sm: "1fr 1fr",
             md: "repeat(4, 1fr)",
           },
           gap: { xs: 1.5, sm: 2 },
-          mt: 3,
-          mb: 3,
+          mb: 4,
         }}
       >
         <Paper elevation={0} sx={{ ...cardSx, p: { xs: 2, sm: 2.5 } }}>
@@ -747,8 +835,17 @@ export default function Dashboard() {
 
       {entries.length > 0 && (
         <>
-          {/* ---------- 2. MOOD TREND ---------- */}
-          <Paper elevation={0} sx={{ ...cardSx, mb: 3 }}>
+          {/* ============================================================ */}
+          {/* SECTION: TRENDS */}
+          {/* ============================================================ */}
+          <SectionLabel
+            icon={<ShowChartRoundedIcon sx={{ fontSize: 20 }} />}
+            title="Trends"
+            accent="#00897B"
+          />
+
+          {/* ---------- MOOD TREND ---------- */}
+          <Paper elevation={0} sx={{ ...cardSx, mb: 4 }}>
             <Box
               sx={{
                 display: "flex",
@@ -875,7 +972,16 @@ export default function Dashboard() {
             </Box>
           </Paper>
 
-          {/* ---------- 3. MOOD DISTRIBUTION + STRESS TREND ---------- */}
+          {/* ============================================================ */}
+          {/* SECTION: INSIGHTS */}
+          {/* ============================================================ */}
+          <SectionLabel
+            icon={<CategoryRoundedIcon sx={{ fontSize: 20 }} />}
+            title="Insights & Patterns"
+            accent="#FB8C00"
+          />
+
+          {/* ---------- MOOD DISTRIBUTION + STRESS TREND ---------- */}
           <Box
             sx={{
               display: "grid",
@@ -885,16 +991,37 @@ export default function Dashboard() {
             }}
           >
             <Paper elevation={0} sx={cardSx}>
-              <Typography
+              <Box
                 sx={{
-                  fontSize: { xs: "1rem", sm: "1.15rem" },
-                  fontWeight: 700,
-                  color: "#0D3654",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
                   mb: 2,
                 }}
               >
-                Mood Distribution
-              </Typography>
+                <Typography
+                  sx={{
+                    fontSize: { xs: "1rem", sm: "1.15rem" },
+                    fontWeight: 700,
+                    color: "#0D3654",
+                  }}
+                >
+                  Mood Distribution
+                </Typography>
+                <Chip
+                  icon={<EmojiEmotionsRoundedIcon sx={{ fontSize: 16 }} />}
+                  label={`${moodDistribution.length} moods`}
+                  size="small"
+                  sx={{
+                    bgcolor: alpha("#1976D2", 0.1),
+                    color: "#1976D2",
+                    fontWeight: 700,
+                    fontSize: "0.72rem",
+                    borderRadius: 2,
+                    "& .MuiChip-icon": { color: "#1976D2" },
+                  }}
+                />
+              </Box>
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {moodDistribution.map((m) => {
                   const pct = (m.count / totalEntries) * 100;
@@ -1081,13 +1208,13 @@ export default function Dashboard() {
             </Paper>
           </Box>
 
-          {/* ---------- 4. SLEEP OVERVIEW + MOOD BY TAG ---------- */}
+          {/* ---------- SLEEP OVERVIEW + MOOD BY TAG ---------- */}
           <Box
             sx={{
               display: "grid",
               gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
               gap: 3,
-              mb: 3,
+              mb: 4,
             }}
           >
             <Paper elevation={0} sx={cardSx}>
@@ -1317,7 +1444,15 @@ export default function Dashboard() {
             </Paper>
           </Box>
 
-          {/* ---------- 5. RECENT ACTIVITY ---------- */}
+          {/* ============================================================ */}
+          {/* SECTION: RECENT ACTIVITY */}
+          {/* ============================================================ */}
+          <SectionLabel
+            icon={<HistoryRoundedIcon sx={{ fontSize: 20 }} />}
+            title="Recent Activity"
+            accent="#5C6BC0"
+          />
+
           <Paper elevation={0} sx={cardSx}>
             <Box
               sx={{
