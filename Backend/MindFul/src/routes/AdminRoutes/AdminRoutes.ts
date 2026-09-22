@@ -4,7 +4,7 @@ import * as UserManagementController from '../../controller/AdminController/User
 import * as JournalManagementController from '../../controller/AdminController/Journal_ManagementController.js';
 import * as AnalyticsController from '../../controller/AdminController/AnalyticsController.js';
 import * as AIManagementController from '../../controller/AdminController/AI_ManagementController.js';
-import { authenticateAdmin } from '../../middleware/VerifyAdminToken.js';
+import { authenticateAdmin } from '../../middleware/verifyAdminToken.js';
 
 const router = Router();
 

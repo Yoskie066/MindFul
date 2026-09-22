@@ -47,7 +47,7 @@ export const getConversationById = async (
   res: Response
 ): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ message: 'Invalid conversation ID' });
       return;
@@ -83,7 +83,7 @@ export const deleteConversation = async (
   res: Response
 ): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ message: 'Invalid conversation ID' });
       return;

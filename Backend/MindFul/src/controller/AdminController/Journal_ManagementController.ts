@@ -70,7 +70,7 @@ export const getAllJournals = async (req: Request, res: Response): Promise<void>
 // ============================================================
 export const getJournalById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ message: 'Invalid journal ID' });
       return;
@@ -103,7 +103,7 @@ export const getJournalById = async (req: Request, res: Response): Promise<void>
 // ============================================================
 export const deleteJournal = async (req: Request, res: Response): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
       res.status(400).json({ message: 'Invalid journal ID' });
       return;

@@ -142,8 +142,8 @@ export const getAllAccounts = async (req: Request, res: Response): Promise<void>
 // ============================================================
 export const deleteAccount = async (req: Request, res: Response): Promise<void> => {
   try {
-    const role = (req.params.role || '').toLowerCase();
-    const id = parseInt(req.params.id);
+    const role = (req.params.role as string || '').toLowerCase();
+    const id = parseInt(req.params.id as string);
 
     if (isNaN(id)) {
       res.status(400).json({ message: 'Invalid account ID' });
