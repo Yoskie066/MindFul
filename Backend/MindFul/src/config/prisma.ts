@@ -6,7 +6,6 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
 const databaseUrl = new URL(process.env.DATABASE_URL!);
 
-// Load Aiven CA certificate
 const caCert = fs.readFileSync(
   path.resolve(process.cwd(), "certs/ca.pem"),
   "utf-8"
@@ -19,8 +18,8 @@ const adapter = new PrismaMariaDb({
   password: decodeURIComponent(databaseUrl.password),
   database: databaseUrl.pathname.replace("/", ""),
   ssl: {
-    ca: [caCert],           
-    rejectUnauthorized: true, 
+    ca: [caCert],
+    rejectUnauthorized: true,
   },
   connectTimeout: 10000,
 });
