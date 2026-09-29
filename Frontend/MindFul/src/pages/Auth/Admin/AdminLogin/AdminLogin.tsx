@@ -11,9 +11,10 @@ import {
   DialogContent,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import GoogleIcon from "@mui/icons-material/Google";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
+import { GoogleLogin } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
 import { adminApi } from "../../../../services/admin_Api";
 
 export default function AdminLogin() {
@@ -23,13 +24,19 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"success" | "error">("success");
   const [modalTitle, setModalTitle] = useState("");
 
+  const showModal = (type: "success" | "error", title: string, delay = 2000) => {
+    setModalType(type);
+    setModalTitle(title);
+    setModalOpen(true);
+    setTimeout(() => setModalOpen(false), delay);
+  };
+
   // ============================================================
-  // HANDLE LOGIN
+  // LOGIN (email/password)
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,28 +46,43 @@ export default function AdminLogin() {
       const response = await adminApi.login({ email, password });
       const { token, admin } = response.data;
 
-      // Save AdminToken + AdminData (matches AdminHeader / AdminLayout)
       localStorage.setItem("adminToken", token);
       localStorage.setItem("adminData", JSON.stringify(admin));
 
-      setModalType("success");
-      setModalTitle("Successful Login");
-      setModalOpen(true);
-
-      setTimeout(() => {
-        setModalOpen(false);
-        navigate("/analytics");
-      }, 2000);
+      showModal("success", "Successful Login");
+      setTimeout(() => navigate("/analytics"), 2000);
     } catch (err: any) {
       console.error("Admin login error:", err);
+      const msg = err?.response?.data?.message || "Login Failed";
+      showModal("error", msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      setModalType("error");
-      setModalTitle("Login Failed");
-      setModalOpen(true);
+  // ============================================================
+  // GOOGLE LOGIN
+  // ============================================================
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      showModal("error", "Google Login Failed");
+      return;
+    }
 
-      setTimeout(() => {
-        setModalOpen(false);
-      }, 2000);
+    setLoading(true);
+    try {
+      const response = await adminApi.googleAuth(credentialResponse.credential);
+      const { token, admin } = response.data;
+
+      localStorage.setItem("adminToken", token);
+      localStorage.setItem("adminData", JSON.stringify(admin));
+
+      showModal("success", "Successful Login");
+      setTimeout(() => navigate("/analytics"), 2000);
+    } catch (err: any) {
+      console.error("Google auth error:", err);
+      const msg = err?.response?.data?.message || "Google Login Failed";
+      showModal("error", msg);
     } finally {
       setLoading(false);
     }
@@ -94,7 +116,6 @@ export default function AdminLogin() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          minHeight: { xs: "auto", sm: "auto" },
           maxHeight: "90vh",
           overflow: "hidden",
         }}
@@ -115,13 +136,9 @@ export default function AdminLogin() {
         <Box
           component="form"
           onSubmit={handleSubmit}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.5,
-          }}
+          sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
         >
-          {/* ---------- EMAIL FIELD ---------- */}
+          {/* EMAIL */}
           <Typography
             component="label"
             htmlFor="email"
@@ -151,23 +168,14 @@ export default function AdminLogin() {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
-          {/* ---------- PASSWORD FIELD ---------- */}
+          {/* PASSWORD */}
           <Typography
             component="label"
             htmlFor="password"
@@ -198,30 +206,15 @@ export default function AdminLogin() {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
-          {/* ---------- FORGOT PASSWORD ---------- */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "flex-end",
-              mt: 1,
-            }}
-          >
+          {/* FORGOT */}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
             <Button
               component={Link}
               to="/admin-forgot-password"
@@ -235,17 +228,14 @@ export default function AdminLogin() {
                 textTransform: "none",
                 minWidth: "auto",
                 p: 0,
-                "&:hover": {
-                  color: "#0D47A1",
-                  backgroundColor: "transparent",
-                },
+                "&:hover": { color: "#0D47A1", backgroundColor: "transparent" },
               }}
             >
               Forgot password?
             </Button>
           </Box>
 
-          {/* ---------- LOGIN BUTTON ---------- */}
+          {/* LOGIN BUTTON */}
           <Button
             fullWidth
             type="submit"
@@ -273,7 +263,7 @@ export default function AdminLogin() {
             {loading ? <CircularProgress size={24} color="inherit" /> : "LOGIN"}
           </Button>
 
-          {/* ---------- REGISTER SECTION ---------- */}
+          {/* REGISTER LINK */}
           <Typography
             align="center"
             sx={{
@@ -313,7 +303,6 @@ export default function AdminLogin() {
             REGISTER
           </Button>
 
-          {/* ---------- DIVIDER ---------- */}
           <Divider
             sx={{
               my: { xs: 2, sm: 2.5 },
@@ -329,79 +318,86 @@ export default function AdminLogin() {
             OR CONTINUE WITH
           </Divider>
 
-          {/* ---------- GOOGLE BUTTON ---------- */}
-          <Button
-            fullWidth
-            type="button"
-            variant="outlined"
-            startIcon={<GoogleIcon />}
-            disabled={loading}
+          {/* ============================================================ */}
+          {/* GOOGLE LOGIN  */}
+          {/* ============================================================ */}
+          <Box
             sx={{
-              minHeight: { xs: 42, sm: 44 },
-              borderRadius: 2.5,
-              textTransform: "none",
-              fontSize: { xs: 13, sm: 14 },
-              fontWeight: 700,
-              color: "#1D425D",
-              borderColor: "#C5D8E6",
-              backgroundColor: "rgba(255,255,255,0.6)",
-              "&:hover": {
-                borderColor: "#1976D2",
-                backgroundColor: "#F0F7FE",
-                boxShadow: "0 2px 8px rgba(25, 118, 210, 0.08)",
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+
+              // Outer wrapper (GoogleLogin renders a <div>)
+              "& > div": {
+                width: "100% !important",
+                maxWidth: "100% !important",
               },
-              transition: "all 0.2s ease",
+
+              // Nested div (extra Google wrappers)
+              "& > div > div": {
+                width: "100% !important",
+              },
+
+              // iframe
+              "& iframe": {
+                width: "100% !important",
+                minWidth: "100% !important",
+                maxWidth: "100% !important",
+              },
+
+              // Google's internal button class
+              "& .nsm7Bb-HzV7m-LgbsSe": {
+                width: "100% !important",
+                minWidth: "100% !important",
+                maxWidth: "100% !important",
+                borderRadius: "10px !important",
+                height: { xs: "44px !important", sm: "46px !important" },
+                fontSize: { xs: "13px !important", sm: "14px !important" },
+              },
+              "& .nsm7Bb-HzV7m-LgbsSe-BPrWId": {
+                fontSize: { xs: "13px !important", sm: "14px !important" },
+                fontWeight: "700 !important",
+              },
+
+              // Fallback
+              '& div[role="button"]': {
+                width: "100% !important",
+                minWidth: "100% !important",
+              },
             }}
           >
-            Continue with Google
-          </Button>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => showModal("error", "Google Login Failed")}
+              theme="outline"
+              size="large"
+              text="continue_with"
+              shape="rectangular"
+              width="360"
+              logo_alignment="center"
+            />
+          </Box>
         </Box>
       </Paper>
 
-      {/* ============================================================ */}
-      {/* MODAL Success / Error */}
-      {/* ============================================================ */}
+      {/* MODAL */}
       <Dialog
         open={modalOpen}
         maxWidth="xs"
         fullWidth
-        disableEscapeKeyDown
         slotProps={{
-          paper: {
-            sx: {
-              borderRadius: 4,
-              p: 1,
-              textAlign: "center",
-            },
-          },
+          paper: { sx: { borderRadius: 4, p: 1, textAlign: "center" } },
         }}
       >
         <DialogContent sx={{ pt: 3, pb: 3 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              mb: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             {modalType === "success" ? (
-              <CheckCircleRoundedIcon
-                sx={{
-                  fontSize: 64,
-                  color: "#1976D2",
-                }}
-              />
+              <CheckCircleRoundedIcon sx={{ fontSize: 64, color: "#1976D2" }} />
             ) : (
               <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
             )}
           </Box>
-          <Typography
-            sx={{
-              fontSize: "1.3rem",
-              fontWeight: 800,
-              color: "#0D3654",
-            }}
-          >
+          <Typography sx={{ fontSize: "1.3rem", fontWeight: 800, color: "#0D3654" }}>
             {modalTitle}
           </Typography>
         </DialogContent>

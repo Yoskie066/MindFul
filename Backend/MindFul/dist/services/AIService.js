@@ -6,7 +6,7 @@ if (!apiKey) {
 }
 const ai = new GoogleGenAI({ apiKey });
 // ============================================================
-// GEMINI MODELS 
+// GEMINI MODELS
 // ============================================================
 const MODELS = [
     "gemini-3.8-flash",
@@ -38,14 +38,12 @@ const tryGenerate = async (prompt) => {
             const status = error?.status || error?.response?.status;
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.warn(`Model ${model} failed: ${status || errorMessage}`);
-            // Try the next model for temporary/unavailable errors
             if (status === 404 ||
                 status === 429 ||
                 status === 503 ||
                 errorMessage === "Request timeout") {
                 continue;
             }
-            // Stop for other unexpected errors
             throw error;
         }
     }
@@ -135,11 +133,18 @@ export const saveAIConversation = async (userId, userMessage, aiResponse, option
 // GET ALL AI CONVERSATIONS (admin, with pagination & filters)
 // ============================================================
 export const getAllAIConversations = async (params) => {
-    const { page, limit, search, userId } = params;
+    const { page, limit, search, userId, status } = params;
     const skip = (page - 1) * limit;
     const where = {};
     if (userId)
         where.userId = userId;
+    // status filter (mapping to isError boolean)
+    if (status === "success") {
+        where.isError = false;
+    }
+    else if (status === "failed") {
+        where.isError = true;
+    }
     if (search) {
         where.OR = [
             { userMessage: { contains: search } },
@@ -170,7 +175,7 @@ export const getAllAIConversations = async (params) => {
     };
 };
 // ============================================================
-// GENERATE AI RESPONSE 
+// GENERATE AI RESPONSE
 // ============================================================
 export const generateAIResponse = async (message, journalEntries) => {
     const summary = buildJournalSummary(journalEntries);

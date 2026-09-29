@@ -8,8 +8,6 @@ import {
   Avatar,
   alpha,
   Divider,
-  useTheme,
-  useMediaQuery,
   CircularProgress,
 } from "@mui/material";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
@@ -43,9 +41,6 @@ const INPUT_HEIGHT = 48;
 // AI ASSISTANT PAGE
 // ============================================================
 export default function AI_Assistant() {
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,

@@ -10,11 +10,13 @@ export const getAllConversations = async (req, res) => {
         const search = (req.query.search || '').trim();
         const userIdRaw = req.query.userId;
         const userId = userIdRaw ? parseInt(userIdRaw) : undefined;
+        const status = (req.query.status || '').trim();
         const result = await getAllAIConversations({
             page,
             limit,
             search,
             userId: userId && !isNaN(userId) ? userId : undefined,
+            status: status || undefined,
         });
         res.status(200).json({
             conversations: result.conversations,

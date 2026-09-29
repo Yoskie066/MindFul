@@ -37,6 +37,7 @@ admin_Api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes("/admin-login") ||
       url.includes("/admin-register") ||
+      url.includes("/admin-google-auth") ||         
       url.includes("/admin-forgot-password") ||
       url.includes("/admin-reset-password");
 
@@ -59,6 +60,9 @@ export const adminApi = {
 
   login: (data: { email: string; password: string }) =>
     admin_Api.post("/admin-login", data),
+
+  googleAuth: (idToken: string) =>
+    admin_Api.post("/admin-google-auth", { idToken }), 
 
   logout: () => admin_Api.post("/admin-logout"),
 
@@ -121,6 +125,7 @@ export const aiManagementApi = {
     limit?: number;
     search?: string;
     userId?: number;
+    status?: string;
   }) => admin_Api.get("/ai-conversations", { params }),
 
   getById: (id: number) => admin_Api.get(`/ai-conversations/${id}`),

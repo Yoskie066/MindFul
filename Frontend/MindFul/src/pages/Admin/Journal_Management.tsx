@@ -33,6 +33,8 @@ import {
 } from "@mui/material";
 import DeleteRoundedIcon from "@mui/icons-material/DeleteRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import { journalManagementApi } from "../../services/admin_Api";
 
 interface JournalEntry {
@@ -89,6 +91,10 @@ export default function Journal_Management() {
   const [search, setSearch] = useState("");
   const [moodFilter, setMoodFilter] = useState("");
 
+  // View dialog (NEW)
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewTarget, setViewTarget] = useState<JournalEntry | null>(null);
+
   // Delete confirm
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -143,6 +149,12 @@ export default function Journal_Management() {
     setPage(0);
   };
 
+  // VIEW (NEW)
+  const handleView = (j: JournalEntry) => {
+    setViewTarget(j);
+    setViewOpen(true);
+  };
+
   const handleDeleteClick = (id: number) => {
     setDeleteId(id);
     setDeleteOpen(true);
@@ -166,6 +178,18 @@ export default function Journal_Management() {
       setDeleting(false);
     }
   };
+
+  // ============================================================
+  // HELPERS
+  // ============================================================
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   // ============================================================
   // RENDER
@@ -238,7 +262,7 @@ export default function Journal_Management() {
               flex: { xs: "1 1 100%", sm: "0 0 auto" },
             }}
           >
-            <InputLabel>Mood </InputLabel>
+            <InputLabel>Mood</InputLabel>
             <Select
               label="Mood Filter"
               value={moodFilter}
@@ -295,7 +319,7 @@ export default function Journal_Management() {
           />
         </Box>
 
-        {/* ============================ LOADING ============================ */}
+        {/* ============================ LOADING / EMPTY / DATA ============================ */}
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress size={36} />
@@ -386,7 +410,7 @@ export default function Journal_Management() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {new Date(j.dateTime).toLocaleString()}
+                      {formatDate(j.dateTime)}
                     </TableCell>
 
                     <TableCell
@@ -481,22 +505,43 @@ export default function Journal_Management() {
                       </Box>
                     </TableCell>
 
+                    {/* ============================ ACTIONS ============================ */}
                     <TableCell>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteClick(j.id)}
-                          sx={{
-                            bgcolor: "#FFEBEE",
-                            "&:hover": { bgcolor: "#FFCDD2" },
-                          }}
-                        >
-                          <DeleteRoundedIcon
-                            fontSize="small"
-                            sx={{ color: "#E53935" }}
-                          />
-                        </IconButton>
-                      </Tooltip>
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        {/* VIEW (EYE ICON) — NEW */}
+                        <Tooltip title="View">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleView(j)}
+                            sx={{
+                              bgcolor: "#EAF3FF",
+                              "&:hover": { bgcolor: "#D6E9FF" },
+                            }}
+                          >
+                            <VisibilityRoundedIcon
+                              fontSize="small"
+                              sx={{ color: "#1976D2" }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+
+                        {/* DELETE */}
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteClick(j.id)}
+                            sx={{
+                              bgcolor: "#FFEBEE",
+                              "&:hover": { bgcolor: "#FFCDD2" },
+                            }}
+                          >
+                            <DeleteRoundedIcon
+                              fontSize="small"
+                              sx={{ color: "#E53935" }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -529,7 +574,7 @@ export default function Journal_Management() {
                   },
                 }}
               >
-                {/* Card Header: User + Delete */}
+                {/* Card Header: User + Actions */}
                 <Box
                   sx={{
                     display: "flex",
@@ -558,22 +603,42 @@ export default function Journal_Management() {
                       User ID: {j.userId}
                     </Typography>
                   </Box>
-                  <Tooltip title="Delete">
-                    <IconButton
-                      size="small"
-                      onClick={() => handleDeleteClick(j.id)}
-                      sx={{
-                        bgcolor: "#FFEBEE",
-                        "&:hover": { bgcolor: "#FFCDD2" },
-                        flexShrink: 0,
-                      }}
-                    >
-                      <DeleteRoundedIcon
-                        fontSize="small"
-                        sx={{ color: "#E53935" }}
-                      />
-                    </IconButton>
-                  </Tooltip>
+
+                  <Box sx={{ display: "flex", gap: 0.5, flexShrink: 0 }}>
+                    {/* VIEW (EYE ICON) — NEW */}
+                    <Tooltip title="View">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleView(j)}
+                        sx={{
+                          bgcolor: "#EAF3FF",
+                          "&:hover": { bgcolor: "#D6E9FF" },
+                        }}
+                      >
+                        <VisibilityRoundedIcon
+                          fontSize="small"
+                          sx={{ color: "#1976D2" }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+
+                    {/* DELETE */}
+                    <Tooltip title="Delete">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteClick(j.id)}
+                        sx={{
+                          bgcolor: "#FFEBEE",
+                          "&:hover": { bgcolor: "#FFCDD2" },
+                        }}
+                      >
+                        <DeleteRoundedIcon
+                          fontSize="small"
+                          sx={{ color: "#E53935" }}
+                        />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
                 </Box>
 
                 <Divider sx={{ mb: 1.5 }} />
@@ -605,7 +670,7 @@ export default function Journal_Management() {
                   <Typography
                     sx={{ fontSize: "0.75rem", color: "#5A7D96" }}
                   >
-                    {new Date(j.dateTime).toLocaleString()}
+                    {formatDate(j.dateTime)}
                   </Typography>
                 </Box>
 
@@ -795,6 +860,316 @@ export default function Journal_Management() {
           }}
         />
       </Paper>
+
+      {/* ============================ VIEW DIALOG — NEW ============================ */}
+      <Dialog
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{
+          paper: { sx: { borderRadius: 4, p: 1 } },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "#0D3654" }}>
+          Journal Entry Details
+        </DialogTitle>
+        <DialogContent dividers sx={{ pt: 3 }}>
+          {viewTarget && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+              {/* Meta chips */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 1,
+                  alignItems: "center",
+                }}
+              >
+                <Chip
+                  icon={<PersonRoundedIcon sx={{ fontSize: 16 }} />}
+                  label={viewTarget.user?.email || `User #${viewTarget.userId}`}
+                  size="small"
+                  sx={{
+                    bgcolor: "#E3F2FD",
+                    color: "#1565C0",
+                    fontWeight: 700,
+                    "& .MuiChip-icon": { color: "#1565C0" },
+                  }}
+                />
+                <Chip
+                  label={`${viewTarget.moodEmoji || ""} ${viewTarget.mood}`.trim()}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    bgcolor: alpha(viewTarget.moodColor || "#1976D2", 0.15),
+                    color: viewTarget.moodColor || "#1976D2",
+                    border: `1px solid ${alpha(
+                      viewTarget.moodColor || "#1976D2",
+                      0.35
+                    )}`,
+                  }}
+                />
+                <Typography
+                  sx={{ fontSize: "0.78rem", color: "#5A7D96", ml: "auto" }}
+                >
+                  {formatDate(viewTarget.dateTime)}
+                </Typography>
+              </Box>
+
+              {/* Metric cards */}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+                  gap: 1.5,
+                }}
+              >
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    bgcolor: "#FFEBEE",
+                    textAlign: "center",
+                    border: "1px solid #FFCDD2",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.72rem",
+                      color: "#C62828",
+                      fontWeight: 800,
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    STRESS LEVEL
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "1.8rem",
+                      color: "#C62828",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {viewTarget.stressLevel}
+                    <Typography
+                      component="span"
+                      sx={{ fontSize: "0.9rem", fontWeight: 600 }}
+                    >
+                      /10
+                    </Typography>
+                  </Typography>
+                </Paper>
+
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    bgcolor: "#E8F5E9",
+                    textAlign: "center",
+                    border: "1px solid #A5D6A7",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.72rem",
+                      color: "#2E7D32",
+                      fontWeight: 800,
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    ENERGY LEVEL
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "1.8rem",
+                      color: "#2E7D32",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {viewTarget.energyLevel}
+                    <Typography
+                      component="span"
+                      sx={{ fontSize: "0.9rem", fontWeight: 600 }}
+                    >
+                      /10
+                    </Typography>
+                  </Typography>
+                </Paper>
+
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    bgcolor: "#E3F2FD",
+                    textAlign: "center",
+                    border: "1px solid #90CAF9",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.72rem",
+                      color: "#1565C0",
+                      fontWeight: 800,
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    SLEEP HOURS
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "1.8rem",
+                      color: "#1565C0",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {viewTarget.sleepHours}
+                    <Typography
+                      component="span"
+                      sx={{ fontSize: "0.9rem", fontWeight: 600 }}
+                    >
+                      h
+                    </Typography>
+                  </Typography>
+                </Paper>
+              </Box>
+
+              {/* Feeling */}
+              <Box>
+                <Typography
+                  sx={{
+                    fontSize: "0.72rem",
+                    fontWeight: 800,
+                    color: "#7A96AD",
+                    letterSpacing: "0.05em",
+                    mb: 0.8,
+                  }}
+                >
+                  FEELING
+                </Typography>
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: 3,
+                    bgcolor: "#F0F7FE",
+                    border: "1px solid #D6E9FF",
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontSize: "0.9rem",
+                      color: "#1D425D",
+                      whiteSpace: "pre-wrap",
+                      lineHeight: 1.65,
+                    }}
+                  >
+                    {viewTarget.feeling}
+                  </Typography>
+                </Paper>
+              </Box>
+
+              {/* Tags */}
+              {Array.isArray(viewTarget.tags) && viewTarget.tags.length > 0 && (
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: "0.72rem",
+                      fontWeight: 800,
+                      color: "#7A96AD",
+                      letterSpacing: "0.05em",
+                      mb: 0.8,
+                    }}
+                  >
+                    TAGS
+                  </Typography>
+                  <Box
+                    sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}
+                  >
+                    {viewTarget.tags.map((t, i) => (
+                      <Chip
+                        key={i}
+                        label={t}
+                        size="small"
+                        sx={{
+                          bgcolor: "#FFF3E0",
+                          color: "#E65100",
+                          fontWeight: 600,
+                        }}
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              {/* Created / Updated meta */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 3,
+                  pt: 1,
+                  borderTop: "1px dashed #D6E9FF",
+                }}
+              >
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: "0.68rem",
+                      fontWeight: 800,
+                      color: "#7A96AD",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    CREATED
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "0.82rem", color: "#35506B" }}
+                  >
+                    {formatDate(viewTarget.createdAt)}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontSize: "0.68rem",
+                      fontWeight: 800,
+                      color: "#7A96AD",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    LAST UPDATED
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: "0.82rem", color: "#35506B" }}
+                  >
+                    {formatDate(viewTarget.updatedAt)}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button
+            onClick={() => setViewOpen(false)}
+            variant="contained"
+            disableElevation
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: 3,
+              px: 4,
+              background: "linear-gradient(135deg, #1976D2 0%, #42A5F5 100%)",
+            }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ============================ DELETE CONFIRM ============================ */}
       <Dialog

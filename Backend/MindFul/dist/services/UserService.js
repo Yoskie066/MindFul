@@ -12,19 +12,16 @@ export const comparePassword = async (password, hashed) => {
     return await bcrypt.compare(password, hashed);
 };
 // ============================================================
-// USER CRUD OPERATIONS
+// USER CRUD
 // ============================================================
 export const createUser = async (data) => {
     const hashed = await hashPassword(data.password);
     return await prisma.user.create({
-        data: {
-            email: data.email,
-            password: hashed,
-        },
+        data: { email: data.email.toLowerCase(), password: hashed },
     });
 };
 export const findUserByEmail = async (email) => {
-    return await prisma.user.findUnique({ where: { email } });
+    return await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 };
 export const findUserById = async (id) => {
     return await prisma.user.findUnique({ where: { id } });
@@ -39,27 +36,39 @@ export const updateUserPassword = async (id, newPassword) => {
 export const updateUserResetToken = async (id, token, expiry) => {
     return await prisma.user.update({
         where: { id },
-        data: {
-            resetToken: token,
-            resetTokenExpiry: expiry,
-        },
+        data: { resetToken: token, resetTokenExpiry: expiry },
     });
 };
 export const findUserByResetToken = async (token) => {
     return await prisma.user.findFirst({
-        where: {
-            resetToken: token,
-            resetTokenExpiry: { gt: new Date() },
-        },
+        where: { resetToken: token, resetTokenExpiry: { gt: new Date() } },
     });
 };
 export const clearUserResetToken = async (id) => {
     return await prisma.user.update({
         where: { id },
+        data: { resetToken: null, resetTokenExpiry: null },
+    });
+};
+// ============================================================
+// GOOGLE HELPERS (NEW)
+// ============================================================
+export const findUserByGoogleId = async (googleId) => {
+    return await prisma.user.findUnique({ where: { googleId } });
+};
+export const createUserWithGoogle = async (data) => {
+    return await prisma.user.create({
         data: {
-            resetToken: null,
-            resetTokenExpiry: null,
+            email: data.email.toLowerCase(),
+            googleId: data.googleId,
+            password: null,
         },
+    });
+};
+export const linkGoogleToUser = async (id, googleId) => {
+    return await prisma.user.update({
+        where: { id },
+        data: { googleId },
     });
 };
 export const generateUserToken = (user) => {

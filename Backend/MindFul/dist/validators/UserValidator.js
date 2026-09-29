@@ -1,19 +1,24 @@
 import { z } from 'zod';
-// User Register
+// Reusable Gmail rule
+const gmailEmail = z
+    .string()
+    .email('Invalid email format')
+    .refine((val) => val.toLowerCase().endsWith('@gmail.com'), {
+    message: 'Email must end with @gmail.com',
+});
+// User Register — must be @gmail.com
 export const registerSchema = z.object({
-    email: z.string().email('Invalid email format'),
+    email: gmailEmail,
     password: z.string().min(6, 'Password must be at least 6 characters'),
 });
-// User Login
+// User Login — Gmail only (same rule keeps things consistent)
 export const loginSchema = z.object({
-    email: z.string().email('Invalid email format'),
+    email: gmailEmail,
     password: z.string().min(1, 'Password is required'),
 });
-// User Forgot Password
 export const forgotPasswordSchema = z.object({
-    email: z.string().email('Invalid email format'),
+    email: gmailEmail,
 });
-// User Reset Password
 export const resetPasswordSchema = z.object({
     token: z.string().min(1, 'Token is required'),
     newPassword: z.string().min(6, 'Password must be at least 6 characters'),

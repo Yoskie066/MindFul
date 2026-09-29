@@ -550,7 +550,6 @@ export default function DailyJournal() {
         open={modalOpen}
         maxWidth="xs"
         fullWidth
-        disableEscapeKeyDown
         slotProps={{
           paper: {
             sx: {

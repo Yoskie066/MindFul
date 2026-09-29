@@ -15,7 +15,6 @@ import {
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
 import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
-import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import BedtimeRoundedIcon from "@mui/icons-material/BedtimeRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import EmojiEmotionsRoundedIcon from "@mui/icons-material/EmojiEmotionsRounded";
@@ -25,7 +24,6 @@ import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import SpaRoundedIcon from "@mui/icons-material/SpaRounded";
 import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import QueryStatsRoundedIcon from "@mui/icons-material/QueryStatsRounded";
 import ShowChartRoundedIcon from "@mui/icons-material/ShowChartRounded";
 import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
@@ -143,7 +141,6 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
-  const isTablet = useMediaQuery(theme.breakpoints.between("sm", "md"));
 
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -511,12 +508,15 @@ export default function Dashboard() {
           How are you today?
         </Typography>
 
+        {/* ============================================================ */}
+        {/* FIXED: onMouseEnter / onMouseLeave moved OUT of sx */}
+        {/* ============================================================ */}
         <Box
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
           sx={{
             position: "relative",
             px: { xs: 3, sm: 4 },
-            onMouseEnter: () => setIsHovering(true),
-            onMouseLeave: () => setIsHovering(false),
           }}
         >
           <IconButton

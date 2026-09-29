@@ -8,39 +8,27 @@ import { authenticateUser } from '../../middleware/verifyUserToken.js';
 
 const router = Router();
 
-// ============================================================
-// AUTH ROUTES 
-// ============================================================
+// AUTH
 router.post('/register', UserController.register);
 router.post('/login', UserController.login);
+router.post('/google-auth', UserController.googleAuth);  
 router.post('/forgot-password', UserController.forgotPassword);
 router.post('/reset-password', UserController.resetPassword);
-router.post('/logout', authenticateUser, UserController.logout);  
+router.post('/logout', authenticateUser, UserController.logout);
 
-// ============================================================
-// USER PROFILE (Protected)
-// ============================================================
+// PROFILE
 router.get('/profile', authenticateUser, UserController.getProfile);
 
-// ============================================================
-// DASHBOARD (Protected)
-// ============================================================
+// DASHBOARD
 router.get('/dashboard', authenticateUser, DashboardController.getDashboard);
 
-// ============================================================
-// DAILY JOURNAL (Protected)
-// ============================================================
+// JOURNAL
 router.post('/daily-journal', authenticateUser, DailyJournalController.createEntry);
 
-// ============================================================
-// HISTORY (Protected)
-// ============================================================
+// HISTORY
 router.get('/history', authenticateUser, HistoryController.getHistory);
 
-// ============================================================
-// AI ASSISTANT (Protected)
-// ============================================================
+// AI
 router.post('/ai-assistant', authenticateUser, AI_AssistantController.chatWithAI);
-
 
 export default router;

@@ -357,7 +357,6 @@ export default function AdminForgotPassword() {
         open={modalOpen}
         maxWidth="xs"
         fullWidth
-        disableEscapeKeyDown
         slotProps={{
           paper: {
             sx: {

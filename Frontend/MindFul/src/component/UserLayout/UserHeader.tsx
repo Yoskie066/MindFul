@@ -46,13 +46,12 @@ export default function UserHeader() {
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   // ============================================================
-  // HEARTBEAT — keeps user online every 60 seconds
+  // HEARTBEAT
   // ============================================================
   useEffect(() => {
     const token = localStorage.getItem("userToken");
     if (!token) return;
 
-    // Fire once on mount
     userApi.heartbeat().catch(() => {});
 
     const interval = setInterval(() => {
@@ -65,7 +64,7 @@ export default function UserHeader() {
   }, []);
 
   // ============================================================
-  // BEFOREUNLOAD — mark offline if tab/browser closed
+  // BEFOREUNLOAD
   // ============================================================
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -86,7 +85,7 @@ export default function UserHeader() {
   }, []);
 
   // ============================================================
-  // LOGOUT — call API first (status → offline), then clear storage
+  // LOGOUT
   // ============================================================
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -123,7 +122,8 @@ export default function UserHeader() {
         }}
       >
         <SpaOutlinedIcon sx={{ color: "#1976D2" }} />
-        <Typography variant="h6" fontWeight={800} color="#0D3654">
+        {/* ✅ fontWeight moved into sx */}
+        <Typography variant="h6" sx={{ fontWeight: 800, color: "#0D3654" }}>
           MindFul
         </Typography>
       </Box>
@@ -255,7 +255,8 @@ export default function UserHeader() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" fontWeight={800} sx={{ flexGrow: 1, color: "#0D3654" }}>
+          {/* fontWeight merged into sx */}
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 800, color: "#0D3654" }}>
             MindFul
           </Typography>
           <Avatar

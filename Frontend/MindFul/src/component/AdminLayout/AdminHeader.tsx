@@ -46,7 +46,7 @@ export default function AdminHeader() {
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   // ============================================================
-  // HEARTBEAT — keeps admin online every 60 seconds
+  // HEARTBEAT
   // ============================================================
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -64,7 +64,7 @@ export default function AdminHeader() {
   }, []);
 
   // ============================================================
-  // BEFOREUNLOAD — mark offline if tab/browser closed
+  // BEFOREUNLOAD
   // ============================================================
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -85,7 +85,7 @@ export default function AdminHeader() {
   }, []);
 
   // ============================================================
-  // LOGOUT — call API first, then clear storage
+  // LOGOUT
   // ============================================================
   const handleLogout = async () => {
     if (loggingOut) return;
@@ -122,7 +122,8 @@ export default function AdminHeader() {
         }}
       >
         <SpaOutlinedIcon sx={{ color: "#1976D2" }} />
-        <Typography variant="h6" fontWeight={800} color="#0D3654">
+        {/* fontWeight moved into sx */}
+        <Typography variant="h6" sx={{ fontWeight: 800, color: "#0D3654" }}>
           MindFul
         </Typography>
       </Box>
@@ -254,7 +255,8 @@ export default function AdminHeader() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" fontWeight={800} sx={{ flexGrow: 1, color: "#0D3654" }}>
+          {/* fontWeight merged into sx */}
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 800, color: "#0D3654" }}>
             MindFul
           </Typography>
           <Avatar

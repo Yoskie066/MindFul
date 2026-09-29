@@ -10,14 +10,14 @@ if (!apiKey) {
 const ai = new GoogleGenAI({ apiKey });
 
 // ============================================================
-// GEMINI MODELS 
+// GEMINI MODELS
 // ============================================================
 const MODELS = [
-    "gemini-3.8-flash",
-    "gemini-3.7-flash",
-    "gemini-3.6-flash",
-    "gemini-3.5-flash",
-    "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
 ];
 
 // ============================================================
@@ -50,11 +50,8 @@ const tryGenerate = async (prompt: string): Promise<string> => {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 
-      console.warn(
-        `Model ${model} failed: ${status || errorMessage}`
-      );
+      console.warn(`Model ${model} failed: ${status || errorMessage}`);
 
-      // Try the next model for temporary/unavailable errors
       if (
         status === 404 ||
         status === 429 ||
@@ -64,7 +61,6 @@ const tryGenerate = async (prompt: string): Promise<string> => {
         continue;
       }
 
-      // Stop for other unexpected errors
       throw error;
     }
   }
@@ -115,9 +111,8 @@ Answer (YES or NO):`;
     const response = await tryGenerate(prompt);
     const cleaned = response.trim().toUpperCase();
     console.log(`Classification result: "${cleaned}"`);
-    
+
     return cleaned.startsWith("YES");
-    
   } catch (error) {
     console.error("Classification error:", error);
 
@@ -193,12 +188,22 @@ export const getAllAIConversations = async (params: {
   limit: number;
   search?: string;
   userId?: number;
+  status?: string;
 }) => {
-  const { page, limit, search, userId } = params;
+  const { page, limit, search, userId, status } = params;   
   const skip = (page - 1) * limit;
 
   const where: any = {};
+
   if (userId) where.userId = userId;
+
+  // status filter (mapping to isError boolean)
+  if (status === "success") {
+    where.isError = false;
+  } else if (status === "failed") {
+    where.isError = true;
+  }
+
   if (search) {
     where.OR = [
       { userMessage: { contains: search } },
@@ -232,7 +237,7 @@ export const getAllAIConversations = async (params: {
 };
 
 // ============================================================
-// GENERATE AI RESPONSE 
+// GENERATE AI RESPONSE
 // ============================================================
 export const generateAIResponse = async (
   message: string,

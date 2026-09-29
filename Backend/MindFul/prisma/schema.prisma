@@ -9,7 +9,8 @@ datasource db {
 model User {
   id                 Int      @id @default(autoincrement())
   email              String   @unique
-  password           String
+  password           String?                          // nullable for Google users
+  googleId           String?  @unique                 // NEW
   resetToken         String?  @db.VarChar(255)
   resetTokenExpiry   DateTime?
   status             String   @default("offline") @db.VarChar(20)
@@ -18,7 +19,7 @@ model User {
   updatedAt          DateTime @updatedAt
 
   journalEntries     JournalEntry[]
-  aiConversations    AIConversation[]    
+  aiConversations    AIConversation[]
 
   @@map("users")
 }
@@ -26,7 +27,8 @@ model User {
 model Admin {
   id                 Int      @id @default(autoincrement())
   email              String   @unique
-  password           String
+  password           String?                          // nullable for Google users
+  googleId           String?  @unique                 // NEW
   resetToken         String?  @db.VarChar(255)
   resetTokenExpiry   DateTime?
   status             String   @default("offline") @db.VarChar(20)
@@ -37,9 +39,6 @@ model Admin {
   @@map("admins")
 }
 
-// ============================================================
-// JOURNAL ENTRY
-// ============================================================
 model JournalEntry {
   id           Int      @id @default(autoincrement())
   userId       Int
@@ -63,9 +62,6 @@ model JournalEntry {
   @@map("journal_entries")
 }
 
-// ============================================================
-// AI CONVERSATION  (one row per user ↔ AI exchange)
-// ============================================================
 model AIConversation {
   id               Int      @id @default(autoincrement())
   userId           Int

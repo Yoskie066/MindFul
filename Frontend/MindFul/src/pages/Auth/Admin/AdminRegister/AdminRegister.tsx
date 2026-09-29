@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Box,
   Button,
-  Divider,
   Paper,
   TextField,
   Typography,
@@ -11,7 +10,6 @@ import {
   DialogContent,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import GoogleIcon from "@mui/icons-material/Google";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
 import { adminApi } from "../../../../services/admin_Api";
@@ -24,56 +22,47 @@ export default function AdminRegister() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"success" | "error">("success");
   const [modalTitle, setModalTitle] = useState("");
 
+  const showModal = (type: "success" | "error", title: string, delay = 2000) => {
+    setModalType(type);
+    setModalTitle(title);
+    setModalOpen(true);
+    setTimeout(() => setModalOpen(false), delay);
+  };
+
   // ============================================================
-  // HANDLE REGISTER
+  // REGISTER (email/password)
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!email.toLowerCase().endsWith("@gmail.com")) {
+      showModal("error", "Email must end with @gmail.com");
+      return;
+    }
+
     if (password !== confirmPassword) {
-      setModalType("error");
-      setModalTitle("Registration Failed");
-      setModalOpen(true);
-      setTimeout(() => setModalOpen(false), 2000);
+      showModal("error", "Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      setModalType("error");
-      setModalTitle("Registration Failed");
-      setModalOpen(true);
-      setTimeout(() => setModalOpen(false), 2000);
+      showModal("error", "Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
-
     try {
       await adminApi.register({ email, password });
-
-      setModalType("success");
-      setModalTitle("Registration Successful");
-      setModalOpen(true);
-
-      setTimeout(() => {
-        setModalOpen(false);
-        navigate("/admin-login");
-      }, 2000);
+      showModal("success", "Registration Successful");
+      setTimeout(() => navigate("/admin-login"), 2000);
     } catch (err: any) {
       console.error("Admin register error:", err);
-
-      setModalType("error");
-      setModalTitle("Registration Failed");
-      setModalOpen(true);
-
-      setTimeout(() => {
-        setModalOpen(false);
-      }, 2000);
+      const msg = err?.response?.data?.message || "Registration Failed";
+      showModal("error", msg);
     } finally {
       setLoading(false);
     }
@@ -127,13 +116,9 @@ export default function AdminRegister() {
         <Box
           component="form"
           onSubmit={handleSubmit}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.5,
-          }}
+          sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
         >
-          {/* ---------- EMAIL FIELD ---------- */}
+          {/* EMAIL */}
           <Typography
             component="label"
             htmlFor="email"
@@ -164,23 +149,14 @@ export default function AdminRegister() {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
-          {/* ---------- PASSWORD FIELD ---------- */}
+          {/* PASSWORD */}
           <Typography
             component="label"
             htmlFor="password"
@@ -211,23 +187,14 @@ export default function AdminRegister() {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
-          {/* ---------- CONFIRM PASSWORD FIELD ---------- */}
+          {/* CONFIRM PASSWORD */}
           <Typography
             component="label"
             htmlFor="confirmPassword"
@@ -258,23 +225,14 @@ export default function AdminRegister() {
                 borderRadius: 2.5,
                 backgroundColor: "#F0F7FE",
                 transition: "all 0.2s ease",
-                "& fieldset": {
-                  borderColor: "transparent",
-                  borderWidth: 2,
-                },
-                "&:hover": {
-                  backgroundColor: "#EAF3FF",
-                  "& fieldset": { borderColor: "#90CAF9" },
-                },
-                "&.Mui-focused": {
-                  backgroundColor: "#FFFFFF",
-                  "& fieldset": { borderColor: "#1976D2", borderWidth: 2 },
-                },
+                "& fieldset": { borderColor: "transparent", borderWidth: 2 },
+                "&:hover": { backgroundColor: "#EAF3FF", "& fieldset": { borderColor: "#90CAF9" } },
+                "&.Mui-focused": { backgroundColor: "#FFFFFF", "& fieldset": { borderColor: "#1976D2", borderWidth: 2 } },
               },
             }}
           />
 
-          {/* ---------- REGISTER BUTTON ---------- */}
+          {/* REGISTER BUTTON */}
           <Button
             fullWidth
             type="submit"
@@ -299,14 +257,10 @@ export default function AdminRegister() {
               "&.Mui-disabled": { backgroundColor: "#90CAF9" },
             }}
           >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "REGISTER"
-            )}
+            {loading ? <CircularProgress size={24} color="inherit" /> : "REGISTER"}
           </Button>
 
-          {/* ---------- LOGIN SECTION ---------- */}
+          {/* LOGIN LINK */}
           <Typography
             align="center"
             sx={{
@@ -345,96 +299,27 @@ export default function AdminRegister() {
           >
             LOGIN
           </Button>
-
-          {/* ---------- DIVIDER ---------- */}
-          <Divider
-            sx={{
-              my: { xs: 2, sm: 2.5 },
-              fontSize: { xs: 11, sm: 12 },
-              color: "#8AACBF",
-              fontWeight: 500,
-              "&::before, &::after": {
-                borderColor: "#D5E4EE",
-                borderWidth: 1,
-              },
-            }}
-          >
-            OR CONTINUE WITH
-          </Divider>
-
-          {/* ---------- GOOGLE BUTTON ---------- */}
-          <Button
-            fullWidth
-            type="button"
-            variant="outlined"
-            startIcon={<GoogleIcon />}
-            disabled={loading}
-            sx={{
-              minHeight: { xs: 42, sm: 44 },
-              borderRadius: 2.5,
-              textTransform: "none",
-              fontSize: { xs: 13, sm: 14 },
-              fontWeight: 700,
-              color: "#1D425D",
-              borderColor: "#C5D8E6",
-              backgroundColor: "rgba(255,255,255,0.6)",
-              "&:hover": {
-                borderColor: "#1976D2",
-                backgroundColor: "#F0F7FE",
-                boxShadow: "0 2px 8px rgba(25, 118, 210, 0.08)",
-              },
-              transition: "all 0.2s ease",
-            }}
-          >
-            Continue with Google
-          </Button>
         </Box>
       </Paper>
 
-      {/* ============================================================ */}
-      {/* MODAL Success / Error */}
-      {/* ============================================================ */}
+      {/* MODAL  */}
       <Dialog
         open={modalOpen}
         maxWidth="xs"
         fullWidth
-        disableEscapeKeyDown
         slotProps={{
-          paper: {
-            sx: {
-              borderRadius: 4,
-              p: 1,
-              textAlign: "center",
-            },
-          },
+          paper: { sx: { borderRadius: 4, p: 1, textAlign: "center" } },
         }}
       >
         <DialogContent sx={{ pt: 3, pb: 3 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              mb: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             {modalType === "success" ? (
-              <CheckCircleRoundedIcon
-                sx={{
-                  fontSize: 64,
-                  color: "#1976D2",
-                }}
-              />
+              <CheckCircleRoundedIcon sx={{ fontSize: 64, color: "#1976D2" }} />
             ) : (
               <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
             )}
           </Box>
-          <Typography
-            sx={{
-              fontSize: "1.3rem",
-              fontWeight: 800,
-              color: "#0D3654",
-            }}
-          >
+          <Typography sx={{ fontSize: "1.3rem", fontWeight: 800, color: "#0D3654" }}>
             {modalTitle}
           </Typography>
         </DialogContent>

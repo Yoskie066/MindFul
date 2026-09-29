@@ -11,7 +11,12 @@ import {
   clearAdminResetToken,
   generateAdminToken,
   compareAdminPassword,
+  // NEW
+  findAdminByGoogleId,
+  createAdminWithGoogle,
+  linkGoogleToAdmin,
 } from '../../services/AdminService.js';
+import { verifyGoogleToken } from '../../services/GoogleAuthService.js';
 import {
   registerSchema,
   loginSchema,
@@ -26,10 +31,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation error',
-        errors: parsed.error.issues,
-      });
+      res.status(400).json({ message: 'Validation error', errors: parsed.error.issues });
       return;
     }
 
@@ -37,7 +39,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const existing = await findAdminByEmail(email);
     if (existing) {
-      res.status(400).json({ message: 'Admin already exists' });
+      res.status(400).json({ message: 'Email is already registered. Please use a different email.' });
       return;
     }
 
@@ -58,24 +60,25 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ============================================================
-// ADMIN LOGIN  → marks admin ONLINE
+// ADMIN LOGIN
 // ============================================================
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation error',
-        errors: parsed.error.issues,
-      });
+      res.status(400).json({ message: 'Validation error', errors: parsed.error.issues });
       return;
     }
 
     const { email, password } = parsed.data;
-
     const admin = await findAdminByEmail(email);
     if (!admin) {
       res.status(401).json({ message: 'Invalid credentials' });
+      return;
+    }
+
+    if (!admin.password) {
+      res.status(401).json({ message: 'This admin uses Google Sign-In. Please continue with Google.' });
       return;
     }
 
@@ -85,7 +88,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    //  Mark as ONLINE
     await prisma.admin.update({
       where: { id: admin.id },
       data: { status: 'online', lastSeen: new Date() },
@@ -107,7 +109,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ============================================================
-// ADMIN LOGOUT  → marks admin OFFLINE
+// ADMIN LOGOUT
 // ============================================================
 export const logout = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -138,15 +140,11 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
   try {
     const parsed = forgotPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation error',
-        errors: parsed.error.issues,
-      });
+      res.status(400).json({ message: 'Validation error', errors: parsed.error.issues });
       return;
     }
 
     const { email } = parsed.data;
-
     const admin = await findAdminByEmail(email);
     if (!admin) {
       res.status(404).json({ message: 'Admin not found' });
@@ -177,15 +175,11 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
   try {
     const parsed = resetPasswordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation error',
-        errors: parsed.error.issues,
-      });
+      res.status(400).json({ message: 'Validation error', errors: parsed.error.issues });
       return;
     }
 
     const { token, newPassword } = parsed.data;
-
     const admin = await findAdminByResetToken(token);
     if (!admin) {
       res.status(400).json({ message: 'Invalid or expired token' });
@@ -230,6 +224,60 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     res.status(500).json({
       message: 'Failed to get profile',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
+};
+
+// ============================================================
+// GOOGLE AUTH
+// ============================================================
+export const googleAuth = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { idToken } = req.body as { idToken?: string };
+    if (!idToken) {
+      res.status(400).json({ message: 'idToken is required' });
+      return;
+    }
+
+    const googleUser = await verifyGoogleToken(idToken);
+
+    if (!googleUser.email.toLowerCase().endsWith('@gmail.com')) {
+      res.status(400).json({ message: 'Only @gmail.com accounts are allowed' });
+      return;
+    }
+
+    let admin = await findAdminByGoogleId(googleUser.googleId);
+
+    if (!admin) {
+      const existing = await findAdminByEmail(googleUser.email);
+      if (existing) {
+        admin = await linkGoogleToAdmin(existing.id, googleUser.googleId);
+      }
+    }
+
+    if (!admin) {
+      admin = await createAdminWithGoogle({
+        email: googleUser.email,
+        googleId: googleUser.googleId,
+      });
+    }
+
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: { status: 'online', lastSeen: new Date() },
+    });
+
+    const token = generateAdminToken(admin);
+
+    res.status(200).json({
+      message: 'Google login successful',
+      admin: { id: admin.id, email: admin.email },
+      token,
+    });
+  } catch (error) {
+    res.status(401).json({
+      message: 'Google authentication failed',
       error: error instanceof Error ? error.message : error,
     });
   }

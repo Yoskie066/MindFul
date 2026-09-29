@@ -20,20 +20,17 @@ export const compareAdminPassword = async (
 };
 
 // ============================================================
-// ADMIN CRUD OPERATIONS
+// ADMIN CRUD
 // ============================================================
 export const createAdmin = async (data: { email: string; password: string }) => {
   const hashed = await hashAdminPassword(data.password);
   return await prisma.admin.create({
-    data: {
-      email: data.email,
-      password: hashed,
-    },
+    data: { email: data.email.toLowerCase(), password: hashed },
   });
 };
 
 export const findAdminByEmail = async (email: string) => {
-  return await prisma.admin.findUnique({ where: { email } });
+  return await prisma.admin.findUnique({ where: { email: email.toLowerCase() } });
 };
 
 export const findAdminById = async (id: number) => {
@@ -48,36 +45,47 @@ export const updateAdminPassword = async (id: number, newPassword: string) => {
   });
 };
 
-export const updateAdminResetToken = async (
-  id: number,
-  token: string,
-  expiry: Date
-) => {
+export const updateAdminResetToken = async (id: number, token: string, expiry: Date) => {
   return await prisma.admin.update({
     where: { id },
-    data: {
-      resetToken: token,
-      resetTokenExpiry: expiry,
-    },
+    data: { resetToken: token, resetTokenExpiry: expiry },
   });
 };
 
 export const findAdminByResetToken = async (token: string) => {
   return await prisma.admin.findFirst({
-    where: {
-      resetToken: token,
-      resetTokenExpiry: { gt: new Date() },
-    },
+    where: { resetToken: token, resetTokenExpiry: { gt: new Date() } },
   });
 };
 
 export const clearAdminResetToken = async (id: number) => {
   return await prisma.admin.update({
     where: { id },
+    data: { resetToken: null, resetTokenExpiry: null },
+  });
+};
+
+// ============================================================
+// GOOGLE HELPERS (NEW)
+// ============================================================
+export const findAdminByGoogleId = async (googleId: string) => {
+  return await prisma.admin.findUnique({ where: { googleId } });
+};
+
+export const createAdminWithGoogle = async (data: { email: string; googleId: string }) => {
+  return await prisma.admin.create({
     data: {
-      resetToken: null,
-      resetTokenExpiry: null,
+      email: data.email.toLowerCase(),
+      googleId: data.googleId,
+      password: null,
     },
+  });
+};
+
+export const linkGoogleToAdmin = async (id: number, googleId: string) => {
+  return await prisma.admin.update({
+    where: { id },
+    data: { googleId },
   });
 };
 

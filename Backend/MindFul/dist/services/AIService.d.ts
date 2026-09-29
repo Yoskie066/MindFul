@@ -40,6 +40,7 @@ export declare const getAllAIConversations: (params: {
     limit: number;
     search?: string;
     userId?: number;
+    status?: string;
 }) => Promise<{
     conversations: ({
         user: {

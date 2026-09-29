@@ -8,41 +8,30 @@ import { authenticateAdmin } from '../../middleware/verifyAdminToken.js';
 
 const router = Router();
 
-// ============================================================
-// ADMIN AUTH ROUTES
-// ============================================================
+// ADMIN AUTH
 router.post('/admin-register', AdminController.register);
 router.post('/admin-login', AdminController.login);
+router.post('/admin-google-auth', AdminController.googleAuth);  
 router.post('/admin-forgot-password', AdminController.forgotPassword);
 router.post('/admin-reset-password', AdminController.resetPassword);
 router.post('/admin-logout', authenticateAdmin, AdminController.logout);
 
-// ============================================================
-// ADMIN PROFILE (Protected)
-// ============================================================
+// ADMIN PROFILE
 router.get('/admin-profile', authenticateAdmin, AdminController.getProfile);
 
-// ============================================================
-// ANALYTICS (Protected)
-// ============================================================
+// ANALYTICS
 router.get('/analytics', authenticateAdmin, AnalyticsController.getAnalytics);
 
-// ============================================================
-// USER MANAGEMENT (Protected)
-// ============================================================
+// USER MANAGEMENT
 router.get('/accounts', authenticateAdmin, UserManagementController.getAllAccounts);
 router.delete('/accounts/:role/:id', authenticateAdmin, UserManagementController.deleteAccount);
 
-// ============================================================
-// JOURNAL MANAGEMENT (Protected)
-// ============================================================
+// JOURNAL MANAGEMENT
 router.get('/journals', authenticateAdmin, JournalManagementController.getAllJournals);
 router.get('/journals/:id', authenticateAdmin, JournalManagementController.getJournalById);
 router.delete('/journals/:id', authenticateAdmin, JournalManagementController.deleteJournal);
 
-// ============================================================
-// AI MANAGEMENT (Protected)
-// ============================================================
+// AI MANAGEMENT
 router.get('/ai-conversations', authenticateAdmin, AIManagementController.getAllConversations);
 router.get('/ai-conversations/:id', authenticateAdmin, AIManagementController.getConversationById);
 router.delete('/ai-conversations/:id', authenticateAdmin, AIManagementController.deleteConversation);

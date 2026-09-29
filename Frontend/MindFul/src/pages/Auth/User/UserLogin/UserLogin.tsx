@@ -13,26 +13,23 @@ import {
 } from "@mui/material";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
-import GoogleIcon from "@mui/icons-material/Google";
+import { GoogleLogin } from "@react-oauth/google";
+import type { CredentialResponse } from "@react-oauth/google";
 import { userApi } from "../../../../services/api";
 
 export default function UserLogin() {
   const navigate = useNavigate();
 
-  // ============================================================
-  // STATE
-  // ============================================================
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<"success" | "error">("success");
   const [modalTitle, setModalTitle] = useState("");
 
   // ============================================================
-  // HANDLE LOGIN
+  // HANDLE LOGIN (email/password)
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +42,6 @@ export default function UserLogin() {
       localStorage.setItem("userToken", token);
       localStorage.setItem("userData", JSON.stringify(user));
 
-      // Success modal 
       setModalType("success");
       setModalTitle("Successful Login");
       setModalOpen(true);
@@ -56,15 +52,49 @@ export default function UserLogin() {
       }, 2000);
     } catch (err: any) {
       console.error("Login error:", err);
-
-      // Error modal 
       setModalType("error");
       setModalTitle("Login Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================
+  // GOOGLE LOGIN
+  // ============================================================
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+    if (!credentialResponse.credential) {
+      setModalType("error");
+      setModalTitle("Google Login Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await userApi.googleAuth(credentialResponse.credential);
+      const { token, user } = response.data;
+
+      localStorage.setItem("userToken", token);
+      localStorage.setItem("userData", JSON.stringify(user));
+
+      setModalType("success");
+      setModalTitle("Successful Login");
       setModalOpen(true);
 
       setTimeout(() => {
         setModalOpen(false);
+        navigate("/dashboard");
       }, 2000);
+    } catch (err: any) {
+      console.error("Google auth error:", err);
+      setModalType("error");
+      setModalTitle("Google Login Failed");
+      setModalOpen(true);
+      setTimeout(() => setModalOpen(false), 2000);
     } finally {
       setLoading(false);
     }
@@ -98,7 +128,6 @@ export default function UserLogin() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          minHeight: { xs: "auto", sm: "auto" },
           maxHeight: "90vh",
           overflow: "hidden",
         }}
@@ -121,7 +150,7 @@ export default function UserLogin() {
           onSubmit={handleSubmit}
           sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
         >
-          {/* ---------- EMAIL FIELD ---------- */}
+          {/* EMAIL */}
           <Typography
             component="label"
             htmlFor="email"
@@ -158,7 +187,7 @@ export default function UserLogin() {
             }}
           />
 
-          {/* ---------- PASSWORD FIELD ---------- */}
+          {/* PASSWORD */}
           <Typography
             component="label"
             htmlFor="password"
@@ -196,7 +225,7 @@ export default function UserLogin() {
             }}
           />
 
-          {/* ---------- FORGOT PASSWORD ---------- */}
+          {/* FORGOT */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
             <Button
               component={Link}
@@ -218,7 +247,7 @@ export default function UserLogin() {
             </Button>
           </Box>
 
-          {/* ---------- LOGIN BUTTON ---------- */}
+          {/* LOGIN BUTTON */}
           <Button
             fullWidth
             type="submit"
@@ -246,7 +275,7 @@ export default function UserLogin() {
             {loading ? <CircularProgress size={24} color="inherit" /> : "LOGIN"}
           </Button>
 
-          {/* ---------- REGISTER SECTION ---------- */}
+          {/* REGISTER LINK */}
           <Typography
             align="center"
             sx={{
@@ -301,78 +330,91 @@ export default function UserLogin() {
             OR CONTINUE WITH
           </Divider>
 
-          <Button
-            fullWidth
-            type="button"
-            variant="outlined"
-            startIcon={<GoogleIcon />}
-            disabled={loading}
+          {/* ============================================================ */}
+          {/* GOOGLE LOGIN — Full width, same as Login/Register buttons */}
+          {/* ============================================================ */}
+          <Box
             sx={{
-              minHeight: { xs: 42, sm: 44 },
-              borderRadius: 2.5,
-              textTransform: "none",
-              fontSize: { xs: 13, sm: 14 },
-              fontWeight: 700,
-              color: "#1D425D",
-              borderColor: "#C5D8E6",
-              backgroundColor: "rgba(255,255,255,0.6)",
-              "&:hover": {
-                borderColor: "#1976D2",
-                backgroundColor: "#F0F7FE",
-                boxShadow: "0 2px 8px rgba(25, 118, 210, 0.08)",
+              width: "100%",
+              display: "flex",
+              justifyContent: "center",
+
+              // Outer wrapper (GoogleLogin renders a <div>)
+              "& > div": {
+                width: "100% !important",
+                maxWidth: "100% !important",
               },
-              transition: "all 0.2s ease",
+
+              // iframe na nagre-render ng button
+              "& > div > div": {
+                width: "100% !important",
+              },
+              "& iframe": {
+                width: "100% !important",
+                minWidth: "100% !important",
+                maxWidth: "100% !important",
+              },
+
+              // Google's internal button element
+              "& .nsm7Bb-HzV7m-LgbsSe": {
+                width: "100% !important",
+                minWidth: "100% !important",
+                maxWidth: "100% !important",
+                borderRadius: "10px !important",
+                height: { xs: "44px !important", sm: "46px !important" },
+                fontSize: { xs: "13px !important", sm: "14px !important" },
+              },
+              "& .nsm7Bb-HzV7m-LgbsSe-BPrWId": {
+                fontSize: { xs: "13px !important", sm: "14px !important" },
+                fontWeight: "700 !important",
+              },
+
+              // Fallback
+              '& div[role="button"]': {
+                width: "100% !important",
+                minWidth: "100% !important",
+              },
             }}
           >
-            Continue with Google
-          </Button>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setModalType("error");
+                setModalTitle("Google Login Failed");
+                setModalOpen(true);
+                setTimeout(() => setModalOpen(false), 2000);
+              }}
+              theme="outline"
+              size="large"
+              text="continue_with"
+              shape="rectangular"
+              width="360"
+              logo_alignment="center"
+            />
+          </Box>
         </Box>
       </Paper>
 
-      {/* ============================================================ */}
-      {/* MODAL Success  */}
-      {/* ============================================================ */}
+      {/* MODAL */}
       <Dialog
         open={modalOpen}
         maxWidth="xs"
         fullWidth
-        disableEscapeKeyDown
         slotProps={{
           paper: {
-            sx: {
-              borderRadius: 4,
-              p: 1,
-              textAlign: "center",
-            },
+            sx: { borderRadius: 4, p: 1, textAlign: "center" },
           },
         }}
       >
         <DialogContent sx={{ pt: 3, pb: 3 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              mb: 2,
-            }}
-          >
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
             {modalType === "success" ? (
-              <CheckCircleRoundedIcon
-                sx={{
-                  fontSize: 64,
-                  color: "#1976D2",
-                }}
-              />
+              <CheckCircleRoundedIcon sx={{ fontSize: 64, color: "#1976D2" }} />
             ) : (
               <ErrorRoundedIcon sx={{ fontSize: 64, color: "#E53935" }} />
             )}
           </Box>
-          <Typography
-            sx={{
-              fontSize: "1.3rem",
-              fontWeight: 800,
-              color: "#0D3654",
-            }}
-          >
+          <Typography sx={{ fontSize: "1.3rem", fontWeight: 800, color: "#0D3654" }}>
             {modalTitle}
           </Typography>
         </DialogContent>

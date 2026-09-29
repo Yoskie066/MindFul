@@ -13,7 +13,7 @@ const api = axios.create({
 });
 
 // ============================================================
-// REQUEST INTERCEPTOR 
+// REQUEST INTERCEPTOR
 // ============================================================
 api.interceptors.request.use(
   (config) => {
@@ -37,6 +37,7 @@ api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes("/login") ||
       url.includes("/register") ||
+      url.includes("/google-auth") ||      
       url.includes("/forgot-password") ||
       url.includes("/reset-password");
 
@@ -60,9 +61,12 @@ export const userApi = {
   login: (data: { email: string; password: string }) =>
     api.post("/login", data),
 
+  googleAuth: (idToken: string) =>
+    api.post("/google-auth", { idToken }),          
+
   logout: () => api.post("/logout"),
 
-  heartbeat: () => api.post("/profile"),   
+  heartbeat: () => api.post("/profile"),
 
   forgotPassword: (data: { email: string }) =>
     api.post("/forgot-password", data),
@@ -72,7 +76,6 @@ export const userApi = {
 
   getProfile: () => api.get("/profile"),
 };
-
 
 // ============================================================
 // DASHBOARD API ENDPOINT

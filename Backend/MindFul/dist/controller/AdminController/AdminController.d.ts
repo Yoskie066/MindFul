@@ -5,4 +5,5 @@ export declare const logout: (req: Request, res: Response) => Promise<void>;
 export declare const forgotPassword: (req: Request, res: Response) => Promise<void>;
 export declare const resetPassword: (req: Request, res: Response) => Promise<void>;
 export declare const getProfile: (req: Request, res: Response) => Promise<void>;
+export declare const googleAuth: (req: Request, res: Response) => Promise<void>;
 //# sourceMappingURL=AdminController.d.ts.map
