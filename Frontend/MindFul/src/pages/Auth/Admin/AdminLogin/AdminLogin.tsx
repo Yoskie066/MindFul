@@ -13,8 +13,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
-import { GoogleLogin } from "@react-oauth/google";
-import type { CredentialResponse } from "@react-oauth/google";
+import GoogleIcon from "@mui/icons-material/Google";
+import { useGoogleLogin } from "@react-oauth/google";
 import { adminApi } from "../../../../services/admin_Api";
 
 export default function AdminLogin() {
@@ -36,7 +36,7 @@ export default function AdminLogin() {
   };
 
   // ============================================================
-  // LOGIN (email/password)
+  // EMAIL/PASSWORD LOGIN
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,32 +61,31 @@ export default function AdminLogin() {
   };
 
   // ============================================================
-  // GOOGLE LOGIN
+  // GOOGLE LOGIN 
   // ============================================================
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    if (!credentialResponse.credential) {
-      showModal("error", "Google Login Failed");
-      return;
-    }
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const response = await adminApi.googleAuth(tokenResponse.access_token);
+        const { token, admin } = response.data;
 
-    setLoading(true);
-    try {
-      const response = await adminApi.googleAuth(credentialResponse.credential);
-      const { token, admin } = response.data;
+        localStorage.setItem("adminToken", token);
+        localStorage.setItem("adminData", JSON.stringify(admin));
 
-      localStorage.setItem("adminToken", token);
-      localStorage.setItem("adminData", JSON.stringify(admin));
-
-      showModal("success", "Successful Login");
-      setTimeout(() => navigate("/analytics"), 2000);
-    } catch (err: any) {
-      console.error("Google auth error:", err);
-      const msg = err?.response?.data?.message || "Google Login Failed";
-      showModal("error", msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+        showModal("success", "Successful Login");
+        setTimeout(() => navigate("/analytics"), 2000);
+      } catch (err: any) {
+        console.error("Google auth error:", err);
+        const msg = err?.response?.data?.message || "Google Login Failed";
+        showModal("error", msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => showModal("error", "Google Login Failed"),
+    onNonOAuthError: (err) => console.error("Non-OAuth error:", err),
+  });
 
   return (
     <Box
@@ -319,64 +318,40 @@ export default function AdminLogin() {
           </Divider>
 
           {/* ============================================================ */}
-          {/* GOOGLE LOGIN  */}
+          {/* GOOGLE LOGIN               */}
           {/* ============================================================ */}
-          <Box
+          <Button
+            fullWidth
+            type="button"
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={() => handleGoogleLogin()}
+            disabled={loading}
             sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "center",
-
-              // Outer wrapper (GoogleLogin renders a <div>)
-              "& > div": {
-                width: "100% !important",
-                maxWidth: "100% !important",
+              minHeight: { xs: 44, sm: 46 },
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontSize: { xs: 13, sm: 14 },
+              fontWeight: 700,
+              color: "#1D425D",
+              borderColor: "#C5D8E6",
+              borderWidth: 2,
+              backgroundColor: "rgba(255,255,255,0.8)",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                borderColor: "#1976D2",
+                backgroundColor: "#F0F7FE",
+                boxShadow: "0 4px 12px rgba(25, 118, 210, 0.12)",
+                transform: "translateY(-1px)",
               },
-
-              // Nested div (extra Google wrappers)
-              "& > div > div": {
-                width: "100% !important",
-              },
-
-              // iframe
-              "& iframe": {
-                width: "100% !important",
-                minWidth: "100% !important",
-                maxWidth: "100% !important",
-              },
-
-              // Google's internal button class
-              "& .nsm7Bb-HzV7m-LgbsSe": {
-                width: "100% !important",
-                minWidth: "100% !important",
-                maxWidth: "100% !important",
-                borderRadius: "10px !important",
-                height: { xs: "44px !important", sm: "46px !important" },
-                fontSize: { xs: "13px !important", sm: "14px !important" },
-              },
-              "& .nsm7Bb-HzV7m-LgbsSe-BPrWId": {
-                fontSize: { xs: "13px !important", sm: "14px !important" },
-                fontWeight: "700 !important",
-              },
-
-              // Fallback
-              '& div[role="button"]': {
-                width: "100% !important",
-                minWidth: "100% !important",
+              "&.Mui-disabled": {
+                borderColor: "#E0E7EF",
+                color: "#90A4AE",
               },
             }}
           >
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => showModal("error", "Google Login Failed")}
-              theme="outline"
-              size="large"
-              text="continue_with"
-              shape="rectangular"
-              width="360"
-              logo_alignment="center"
-            />
-          </Box>
+            Continue with Google
+          </Button>
         </Box>
       </Paper>
 

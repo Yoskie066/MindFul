@@ -37,7 +37,7 @@ api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes("/login") ||
       url.includes("/register") ||
-      url.includes("/google-auth") ||      
+      url.includes("/google-auth") ||
       url.includes("/forgot-password") ||
       url.includes("/reset-password");
 
@@ -61,8 +61,8 @@ export const userApi = {
   login: (data: { email: string; password: string }) =>
     api.post("/login", data),
 
-  googleAuth: (idToken: string) =>
-    api.post("/google-auth", { idToken }),          
+  googleAuth: (accessToken: string) =>
+    api.post("/google-auth", { accessToken }),
 
   logout: () => api.post("/logout"),
 

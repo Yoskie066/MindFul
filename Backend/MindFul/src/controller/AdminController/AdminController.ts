@@ -16,7 +16,10 @@ import {
   createAdminWithGoogle,
   linkGoogleToAdmin,
 } from '../../services/AdminService.js';
-import { verifyGoogleToken } from '../../services/GoogleAuthService.js';
+import {
+  verifyGoogleToken,
+  verifyGoogleAccessToken, 
+} from '../../services/GoogleAuthService.js';
 import {
   registerSchema,
   loginSchema,
@@ -230,25 +233,35 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
 };
 
 // ============================================================
-// GOOGLE AUTH
+// GOOGLE AUTH 
 // ============================================================
 export const googleAuth = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { idToken } = req.body as { idToken?: string };
-    if (!idToken) {
-      res.status(400).json({ message: 'idToken is required' });
+    const { idToken, accessToken } = req.body as {
+      idToken?: string;
+      accessToken?: string;
+    };
+
+    if (!idToken && !accessToken) {
+      res.status(400).json({ message: 'idToken or accessToken is required' });
       return;
     }
 
-    const googleUser = await verifyGoogleToken(idToken);
+    // Verify via appropriate method
+    const googleUser = idToken
+      ? await verifyGoogleToken(idToken)
+      : await verifyGoogleAccessToken(accessToken!);
 
+    // Gmail-only rule
     if (!googleUser.email.toLowerCase().endsWith('@gmail.com')) {
       res.status(400).json({ message: 'Only @gmail.com accounts are allowed' });
       return;
     }
 
+    // 1) Look up by Google ID
     let admin = await findAdminByGoogleId(googleUser.googleId);
 
+    // 2) Look up by email — link if exists
     if (!admin) {
       const existing = await findAdminByEmail(googleUser.email);
       if (existing) {
@@ -256,6 +269,7 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
+    // 3) Otherwise create a fresh Google-only admin
     if (!admin) {
       admin = await createAdminWithGoogle({
         email: googleUser.email,

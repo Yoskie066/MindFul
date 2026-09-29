@@ -37,7 +37,7 @@ admin_Api.interceptors.response.use(
     const isAuthEndpoint =
       url.includes("/admin-login") ||
       url.includes("/admin-register") ||
-      url.includes("/admin-google-auth") ||         
+      url.includes("/admin-google-auth") ||
       url.includes("/admin-forgot-password") ||
       url.includes("/admin-reset-password");
 
@@ -61,8 +61,8 @@ export const adminApi = {
   login: (data: { email: string; password: string }) =>
     admin_Api.post("/admin-login", data),
 
-  googleAuth: (idToken: string) =>
-    admin_Api.post("/admin-google-auth", { idToken }), 
+  googleAuth: (accessToken: string) =>
+    admin_Api.post("/admin-google-auth", { accessToken }),
 
   logout: () => admin_Api.post("/admin-logout"),
 

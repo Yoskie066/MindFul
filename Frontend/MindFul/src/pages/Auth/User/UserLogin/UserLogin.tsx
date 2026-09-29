@@ -13,8 +13,8 @@ import {
 } from "@mui/material";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ErrorRoundedIcon from "@mui/icons-material/ErrorRounded";
-import { GoogleLogin } from "@react-oauth/google";
-import type { CredentialResponse } from "@react-oauth/google";
+import GoogleIcon from "@mui/icons-material/Google";
+import { useGoogleLogin } from "@react-oauth/google";
 import { userApi } from "../../../../services/api";
 
 export default function UserLogin() {
@@ -28,8 +28,15 @@ export default function UserLogin() {
   const [modalType, setModalType] = useState<"success" | "error">("success");
   const [modalTitle, setModalTitle] = useState("");
 
+  const showModal = (type: "success" | "error", title: string, delay = 2000) => {
+    setModalType(type);
+    setModalTitle(title);
+    setModalOpen(true);
+    setTimeout(() => setModalOpen(false), delay);
+  };
+
   // ============================================================
-  // HANDLE LOGIN (email/password)
+  // EMAIL/PASSWORD LOGIN
   // ============================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,63 +49,43 @@ export default function UserLogin() {
       localStorage.setItem("userToken", token);
       localStorage.setItem("userData", JSON.stringify(user));
 
-      setModalType("success");
-      setModalTitle("Successful Login");
-      setModalOpen(true);
-
-      setTimeout(() => {
-        setModalOpen(false);
-        navigate("/dashboard");
-      }, 2000);
+      showModal("success", "Successful Login");
+      setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err: any) {
       console.error("Login error:", err);
-      setModalType("error");
-      setModalTitle("Login Failed");
-      setModalOpen(true);
-      setTimeout(() => setModalOpen(false), 2000);
+      const msg = err?.response?.data?.message || "Login Failed";
+      showModal("error", msg);
     } finally {
       setLoading(false);
     }
   };
 
   // ============================================================
-  // GOOGLE LOGIN
+  // GOOGLE LOGIN — via useGoogleLogin (NO IFRAME!)
   // ============================================================
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
-    if (!credentialResponse.credential) {
-      setModalType("error");
-      setModalTitle("Google Login Failed");
-      setModalOpen(true);
-      setTimeout(() => setModalOpen(false), 2000);
-      return;
-    }
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const response = await userApi.googleAuth(tokenResponse.access_token);
+        const { token, user } = response.data;
 
-    setLoading(true);
-    try {
-      const response = await userApi.googleAuth(credentialResponse.credential);
-      const { token, user } = response.data;
+        localStorage.setItem("userToken", token);
+        localStorage.setItem("userData", JSON.stringify(user));
 
-      localStorage.setItem("userToken", token);
-      localStorage.setItem("userData", JSON.stringify(user));
-
-      setModalType("success");
-      setModalTitle("Successful Login");
-      setModalOpen(true);
-
-      setTimeout(() => {
-        setModalOpen(false);
-        navigate("/dashboard");
-      }, 2000);
-    } catch (err: any) {
-      console.error("Google auth error:", err);
-      setModalType("error");
-      setModalTitle("Google Login Failed");
-      setModalOpen(true);
-      setTimeout(() => setModalOpen(false), 2000);
-    } finally {
-      setLoading(false);
-    }
-  };
+        showModal("success", "Successful Login");
+        setTimeout(() => navigate("/dashboard"), 2000);
+      } catch (err: any) {
+        console.error("Google auth error:", err);
+        const msg = err?.response?.data?.message || "Google Login Failed";
+        showModal("error", msg);
+      } finally {
+        setLoading(false);
+      }
+    },
+    onError: () => showModal("error", "Google Login Failed"),
+    onNonOAuthError: (err) => console.error("Non-OAuth error:", err),
+  });
 
   return (
     <Box
@@ -331,67 +318,40 @@ export default function UserLogin() {
           </Divider>
 
           {/* ============================================================ */}
-          {/* GOOGLE LOGIN — Full width, same as Login/Register buttons */}
+          {/* GOOGLE LOGIN — NATIVE MUI BUTTON (NO IFRAME!)              */}
           {/* ============================================================ */}
-          <Box
+          <Button
+            fullWidth
+            type="button"
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={() => handleGoogleLogin()}
+            disabled={loading}
             sx={{
-              width: "100%",
-              display: "flex",
-              justifyContent: "center",
-
-              // Outer wrapper (GoogleLogin renders a <div>)
-              "& > div": {
-                width: "100% !important",
-                maxWidth: "100% !important",
+              minHeight: { xs: 44, sm: 46 },
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontSize: { xs: 13, sm: 14 },
+              fontWeight: 700,
+              color: "#1D425D",
+              borderColor: "#C5D8E6",
+              borderWidth: 2,
+              backgroundColor: "rgba(255,255,255,0.8)",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                borderColor: "#1976D2",
+                backgroundColor: "#F0F7FE",
+                boxShadow: "0 4px 12px rgba(25, 118, 210, 0.12)",
+                transform: "translateY(-1px)",
               },
-
-              // iframe na nagre-render ng button
-              "& > div > div": {
-                width: "100% !important",
-              },
-              "& iframe": {
-                width: "100% !important",
-                minWidth: "100% !important",
-                maxWidth: "100% !important",
-              },
-
-              // Google's internal button element
-              "& .nsm7Bb-HzV7m-LgbsSe": {
-                width: "100% !important",
-                minWidth: "100% !important",
-                maxWidth: "100% !important",
-                borderRadius: "10px !important",
-                height: { xs: "44px !important", sm: "46px !important" },
-                fontSize: { xs: "13px !important", sm: "14px !important" },
-              },
-              "& .nsm7Bb-HzV7m-LgbsSe-BPrWId": {
-                fontSize: { xs: "13px !important", sm: "14px !important" },
-                fontWeight: "700 !important",
-              },
-
-              // Fallback
-              '& div[role="button"]': {
-                width: "100% !important",
-                minWidth: "100% !important",
+              "&.Mui-disabled": {
+                borderColor: "#E0E7EF",
+                color: "#90A4AE",
               },
             }}
           >
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => {
-                setModalType("error");
-                setModalTitle("Google Login Failed");
-                setModalOpen(true);
-                setTimeout(() => setModalOpen(false), 2000);
-              }}
-              theme="outline"
-              size="large"
-              text="continue_with"
-              shape="rectangular"
-              width="360"
-              logo_alignment="center"
-            />
-          </Box>
+            Continue with Google
+          </Button>
         </Box>
       </Paper>
 

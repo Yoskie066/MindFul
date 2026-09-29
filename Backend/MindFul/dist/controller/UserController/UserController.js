@@ -1,9 +1,7 @@
 import crypto from 'crypto';
 import prisma from '../../config/prisma.js';
-import { createUser, findUserByEmail, findUserById, updateUserPassword, updateUserResetToken, findUserByResetToken, clearUserResetToken, generateUserToken, comparePassword, 
-// NEW
-findUserByGoogleId, createUserWithGoogle, linkGoogleToUser, } from '../../services/UserService.js';
-import { verifyGoogleToken } from '../../services/GoogleAuthService.js';
+import { createUser, findUserByEmail, findUserById, updateUserPassword, updateUserResetToken, findUserByResetToken, clearUserResetToken, generateUserToken, comparePassword, findUserByGoogleId, createUserWithGoogle, linkGoogleToUser, } from '../../services/UserService.js';
+import { verifyGoogleToken, verifyGoogleAccessToken, } from '../../services/GoogleAuthService.js';
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, } from '../../validators/UserValidator.js';
 // ============================================================
 // USER REGISTER
@@ -19,7 +17,6 @@ export const register = async (req, res) => {
             return;
         }
         const { email, password } = parsed.data;
-        // Duplicate email check
         const existing = await findUserByEmail(email);
         if (existing) {
             res.status(400).json({ message: 'Email is already registered. Please use a different email.' });
@@ -59,7 +56,6 @@ export const login = async (req, res) => {
             res.status(401).json({ message: 'Invalid credentials' });
             return;
         }
-        // Google-only user can't login via password
         if (!user.password) {
             res.status(401).json({ message: 'This account uses Google Sign-In. Please continue with Google.' });
             return;
@@ -202,19 +198,22 @@ export const getProfile = async (req, res) => {
 // ============================================================
 export const googleAuth = async (req, res) => {
     try {
-        const { idToken } = req.body;
-        if (!idToken) {
-            res.status(400).json({ message: 'idToken is required' });
+        const { idToken, accessToken } = req.body;
+        if (!idToken && !accessToken) {
+            res.status(400).json({ message: 'idToken or accessToken is required' });
             return;
         }
-        const googleUser = await verifyGoogleToken(idToken);
+        const googleUser = idToken
+            ? await verifyGoogleToken(idToken)
+            : await verifyGoogleAccessToken(accessToken);
+        // Gmail-only rule
         if (!googleUser.email.toLowerCase().endsWith('@gmail.com')) {
             res.status(400).json({ message: 'Only @gmail.com accounts are allowed' });
             return;
         }
         // 1) Look up by Google ID
         let user = await findUserByGoogleId(googleUser.googleId);
-        // 2) Look up by email — link if exists (so Google & password share the same account)
+        // 2) Look up by email — link if exists
         if (!user) {
             const existing = await findUserByEmail(googleUser.email);
             if (existing) {

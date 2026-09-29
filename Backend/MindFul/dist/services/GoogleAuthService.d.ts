@@ -6,4 +6,5 @@ export interface GoogleUserInfo {
     picture?: string;
 }
 export declare const verifyGoogleToken: (idToken: string) => Promise<GoogleUserInfo>;
+export declare const verifyGoogleAccessToken: (accessToken: string) => Promise<GoogleUserInfo>;
 //# sourceMappingURL=GoogleAuthService.d.ts.map
