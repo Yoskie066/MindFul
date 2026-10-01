@@ -51,7 +51,7 @@ export const clearUserResetToken = async (id) => {
     });
 };
 // ============================================================
-// GOOGLE HELPERS (NEW)
+// GOOGLE HELPERS
 // ============================================================
 export const findUserByGoogleId = async (googleId) => {
     return await prisma.user.findUnique({ where: { googleId } });
@@ -61,14 +61,29 @@ export const createUserWithGoogle = async (data) => {
         data: {
             email: data.email.toLowerCase(),
             googleId: data.googleId,
+            name: data.name ?? null,
+            picture: data.picture ?? null,
             password: null,
         },
     });
 };
-export const linkGoogleToUser = async (id, googleId) => {
+export const linkGoogleToUser = async (id, googleId, name, picture) => {
     return await prisma.user.update({
         where: { id },
-        data: { googleId },
+        data: {
+            googleId,
+            ...(name ? { name } : {}),
+            ...(picture ? { picture } : {}),
+        },
+    });
+};
+export const updateGoogleProfile = async (id, name, picture) => {
+    return await prisma.user.update({
+        where: { id },
+        data: {
+            ...(name ? { name } : {}),
+            ...(picture ? { picture } : {}),
+        },
     });
 };
 export const generateUserToken = (user) => {

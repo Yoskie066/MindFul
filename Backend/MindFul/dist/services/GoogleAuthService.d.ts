@@ -1,10 +1,9 @@
-export interface GoogleUserInfo {
-    googleId: string;
+export type GoogleUser = {
     email: string;
-    emailVerified: boolean;
-    name?: string;
-    picture?: string;
-}
-export declare const verifyGoogleToken: (idToken: string) => Promise<GoogleUserInfo>;
-export declare const verifyGoogleAccessToken: (accessToken: string) => Promise<GoogleUserInfo>;
+    googleId: string;
+    name: string;
+    picture: string;
+};
+export declare const verifyGoogleToken: (idToken: string) => Promise<GoogleUser>;
+export declare const verifyGoogleAccessToken: (accessToken: string) => Promise<GoogleUser>;
 //# sourceMappingURL=GoogleAuthService.d.ts.map

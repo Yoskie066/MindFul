@@ -9,6 +9,8 @@ export declare const createUser: (data: {
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -21,6 +23,8 @@ export declare const findUserByEmail: (email: string) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -33,6 +37,8 @@ export declare const findUserById: (id: number) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -45,6 +51,8 @@ export declare const updateUserPassword: (id: number, newPassword: string) => Pr
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -57,6 +65,8 @@ export declare const updateUserResetToken: (id: number, token: string, expiry: D
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -69,6 +79,8 @@ export declare const findUserByResetToken: (token: string) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -81,6 +93,8 @@ export declare const clearUserResetToken: (id: number) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -93,6 +107,8 @@ export declare const findUserByGoogleId: (googleId: string) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -103,11 +119,15 @@ export declare const findUserByGoogleId: (googleId: string) => Promise<{
 export declare const createUserWithGoogle: (data: {
     email: string;
     googleId: string;
+    name?: string;
+    picture?: string;
 }) => Promise<{
     id: number;
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -115,11 +135,27 @@ export declare const createUserWithGoogle: (data: {
     createdAt: Date;
     updatedAt: Date;
 }>;
-export declare const linkGoogleToUser: (id: number, googleId: string) => Promise<{
+export declare const linkGoogleToUser: (id: number, googleId: string, name?: string, picture?: string) => Promise<{
     id: number;
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
+    resetToken: string | null;
+    resetTokenExpiry: Date | null;
+    status: string;
+    lastSeen: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}>;
+export declare const updateGoogleProfile: (id: number, name?: string, picture?: string) => Promise<{
+    id: number;
+    email: string;
+    password: string | null;
+    googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;

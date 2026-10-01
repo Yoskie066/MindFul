@@ -14,10 +14,11 @@ import {
   findUserByGoogleId,
   createUserWithGoogle,
   linkGoogleToUser,
+  updateGoogleProfile,
 } from '../../services/UserService.js';
 import {
   verifyGoogleToken,
-  verifyGoogleAccessToken,  
+  verifyGoogleAccessToken,
 } from '../../services/GoogleAuthService.js';
 import {
   registerSchema,
@@ -33,10 +34,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = registerSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation error',
-        errors: parsed.error.issues,
-      });
+      res.status(400).json({ message: 'Validation error', errors: parsed.error.issues });
       return;
     }
 
@@ -53,7 +51,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({
       message: 'User registered successfully',
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, name: user.name, picture: user.picture },
       token,
     });
   } catch (error) {
@@ -71,10 +69,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({
-        message: 'Validation error',
-        errors: parsed.error.issues,
-      });
+      res.status(400).json({ message: 'Validation error', errors: parsed.error.issues });
       return;
     }
 
@@ -106,7 +101,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({
       message: 'Login successful',
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, name: user.name, picture: user.picture },
       token,
     });
   } catch (error) {
@@ -143,7 +138,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ============================================================
-// USER FORGOT PASSWORD
+// FORGOT PASSWORD
 // ============================================================
 export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -178,7 +173,7 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 };
 
 // ============================================================
-// USER RESET PASSWORD
+// RESET PASSWORD
 // ============================================================
 export const resetPassword = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -227,6 +222,8 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
     res.status(200).json({
       id: user.id,
       email: user.email,
+      name: user.name,
+      picture: user.picture,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     });
@@ -257,29 +254,37 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
       ? await verifyGoogleToken(idToken)
       : await verifyGoogleAccessToken(accessToken!);
 
-    // Gmail-only rule
     if (!googleUser.email.toLowerCase().endsWith('@gmail.com')) {
       res.status(400).json({ message: 'Only @gmail.com accounts are allowed' });
       return;
     }
 
-    // 1) Look up by Google ID
+    // 1) Lookup by Google ID
     let user = await findUserByGoogleId(googleUser.googleId);
 
-    // 2) Look up by email — link if exists
+    // 2) Lookup by email — link
     if (!user) {
       const existing = await findUserByEmail(googleUser.email);
       if (existing) {
-        user = await linkGoogleToUser(existing.id, googleUser.googleId);
+        user = await linkGoogleToUser(
+          existing.id,
+          googleUser.googleId,
+          googleUser.name,
+          googleUser.picture
+        );
       }
     }
 
-    // 3) Otherwise create a fresh Google-only user
     if (!user) {
       user = await createUserWithGoogle({
         email: googleUser.email,
         googleId: googleUser.googleId,
+        name: googleUser.name,
+        picture: googleUser.picture,
       });
+      
+    } else {
+      user = await updateGoogleProfile(user.id, googleUser.name, googleUser.picture);
     }
 
     await prisma.user.update({
@@ -291,7 +296,12 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
 
     res.status(200).json({
       message: 'Google login successful',
-      user: { id: user.id, email: user.email },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+      },
       token,
     });
   } catch (error) {

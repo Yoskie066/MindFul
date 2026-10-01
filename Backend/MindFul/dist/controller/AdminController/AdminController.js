@@ -1,8 +1,6 @@
 import crypto from 'crypto';
 import prisma from '../../config/prisma.js';
-import { createAdmin, findAdminByEmail, findAdminById, updateAdminPassword, updateAdminResetToken, findAdminByResetToken, clearAdminResetToken, generateAdminToken, compareAdminPassword, 
-// NEW
-findAdminByGoogleId, createAdminWithGoogle, linkGoogleToAdmin, } from '../../services/AdminService.js';
+import { createAdmin, findAdminByEmail, findAdminById, updateAdminPassword, updateAdminResetToken, findAdminByResetToken, clearAdminResetToken, generateAdminToken, compareAdminPassword, findAdminByGoogleId, createAdminWithGoogle, linkGoogleToAdmin, updateGoogleProfile, } from '../../services/AdminService.js';
 import { verifyGoogleToken, verifyGoogleAccessToken, } from '../../services/GoogleAuthService.js';
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, } from '../../validators/AdminValidator.js';
 // ============================================================
@@ -25,7 +23,7 @@ export const register = async (req, res) => {
         const token = generateAdminToken(admin);
         res.status(201).json({
             message: 'Admin registered successfully',
-            admin: { id: admin.id, email: admin.email },
+            admin: { id: admin.id, email: admin.email, name: admin.name, picture: admin.picture },
             token,
         });
     }
@@ -68,7 +66,7 @@ export const login = async (req, res) => {
         const token = generateAdminToken(admin);
         res.status(200).json({
             message: 'Login successful',
-            admin: { id: admin.id, email: admin.email },
+            admin: { id: admin.id, email: admin.email, name: admin.name, picture: admin.picture },
             token,
         });
     }
@@ -103,7 +101,7 @@ export const logout = async (req, res) => {
     }
 };
 // ============================================================
-// ADMIN FORGOT PASSWORD
+// FORGOT PASSWORD
 // ============================================================
 export const forgotPassword = async (req, res) => {
     try {
@@ -134,7 +132,7 @@ export const forgotPassword = async (req, res) => {
     }
 };
 // ============================================================
-// ADMIN RESET PASSWORD
+// RESET PASSWORD
 // ============================================================
 export const resetPassword = async (req, res) => {
     try {
@@ -178,6 +176,8 @@ export const getProfile = async (req, res) => {
         res.status(200).json({
             id: admin.id,
             email: admin.email,
+            name: admin.name,
+            picture: admin.picture,
             createdAt: admin.createdAt,
             updatedAt: admin.updatedAt,
         });
@@ -190,7 +190,7 @@ export const getProfile = async (req, res) => {
     }
 };
 // ============================================================
-// GOOGLE AUTH 
+// GOOGLE AUTH
 // ============================================================
 export const googleAuth = async (req, res) => {
     try {
@@ -199,30 +199,32 @@ export const googleAuth = async (req, res) => {
             res.status(400).json({ message: 'idToken or accessToken is required' });
             return;
         }
-        // Verify via appropriate method
         const googleUser = idToken
             ? await verifyGoogleToken(idToken)
             : await verifyGoogleAccessToken(accessToken);
-        // Gmail-only rule
         if (!googleUser.email.toLowerCase().endsWith('@gmail.com')) {
             res.status(400).json({ message: 'Only @gmail.com accounts are allowed' });
             return;
         }
-        // 1) Look up by Google ID
+        // 1) Lookup by Google ID
         let admin = await findAdminByGoogleId(googleUser.googleId);
-        // 2) Look up by email — link if exists
+        // 2) Lookup by email — link
         if (!admin) {
             const existing = await findAdminByEmail(googleUser.email);
             if (existing) {
-                admin = await linkGoogleToAdmin(existing.id, googleUser.googleId);
+                admin = await linkGoogleToAdmin(existing.id, googleUser.googleId, googleUser.name, googleUser.picture);
             }
         }
-        // 3) Otherwise create a fresh Google-only admin
         if (!admin) {
             admin = await createAdminWithGoogle({
                 email: googleUser.email,
                 googleId: googleUser.googleId,
+                name: googleUser.name,
+                picture: googleUser.picture,
             });
+        }
+        else {
+            admin = await updateGoogleProfile(admin.id, googleUser.name, googleUser.picture);
         }
         await prisma.admin.update({
             where: { id: admin.id },
@@ -231,7 +233,12 @@ export const googleAuth = async (req, res) => {
         const token = generateAdminToken(admin);
         res.status(200).json({
             message: 'Google login successful',
-            admin: { id: admin.id, email: admin.email },
+            admin: {
+                id: admin.id,
+                email: admin.email,
+                name: admin.name,
+                picture: admin.picture,
+            },
             token,
         });
     }

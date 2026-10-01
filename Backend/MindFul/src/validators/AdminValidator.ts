@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// Reusable Gmail rule
 const gmailEmail = z
   .string()
   .email('Invalid email format')
@@ -7,11 +8,13 @@ const gmailEmail = z
     message: 'Email must end with @gmail.com',
   });
 
+// Admin Register — must be @gmail.com
 export const registerSchema = z.object({
   email: gmailEmail,
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+// Admin Login — Gmail only
 export const loginSchema = z.object({
   email: gmailEmail,
   password: z.string().min(1, 'Password is required'),

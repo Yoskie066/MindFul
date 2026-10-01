@@ -12,7 +12,10 @@ export const hashPassword = async (password: string): Promise<string> => {
   return await bcrypt.hash(password, SALT_ROUNDS);
 };
 
-export const comparePassword = async (password: string, hashed: string): Promise<boolean> => {
+export const comparePassword = async (
+  password: string,
+  hashed: string
+): Promise<boolean> => {
   return await bcrypt.compare(password, hashed);
 };
 
@@ -63,26 +66,56 @@ export const clearUserResetToken = async (id: number) => {
 };
 
 // ============================================================
-// GOOGLE HELPERS (NEW)
+// GOOGLE HELPERS
 // ============================================================
 export const findUserByGoogleId = async (googleId: string) => {
   return await prisma.user.findUnique({ where: { googleId } });
 };
 
-export const createUserWithGoogle = async (data: { email: string; googleId: string }) => {
+export const createUserWithGoogle = async (data: {
+  email: string;
+  googleId: string;
+  name?: string;
+  picture?: string;
+}) => {
   return await prisma.user.create({
     data: {
       email: data.email.toLowerCase(),
       googleId: data.googleId,
+      name: data.name ?? null,
+      picture: data.picture ?? null,
       password: null,
     },
   });
 };
 
-export const linkGoogleToUser = async (id: number, googleId: string) => {
+export const linkGoogleToUser = async (
+  id: number,
+  googleId: string,
+  name?: string,
+  picture?: string
+) => {
   return await prisma.user.update({
     where: { id },
-    data: { googleId },
+    data: {
+      googleId,
+      ...(name ? { name } : {}),
+      ...(picture ? { picture } : {}),
+    },
+  });
+};
+
+export const updateGoogleProfile = async (
+  id: number,
+  name?: string,
+  picture?: string
+) => {
+  return await prisma.user.update({
+    where: { id },
+    data: {
+      ...(name ? { name } : {}),
+      ...(picture ? { picture } : {}),
+    },
   });
 };
 

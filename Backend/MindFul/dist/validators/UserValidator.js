@@ -11,7 +11,7 @@ export const registerSchema = z.object({
     email: gmailEmail,
     password: z.string().min(6, 'Password must be at least 6 characters'),
 });
-// User Login — Gmail only (same rule keeps things consistent)
+// User Login — Gmail only 
 export const loginSchema = z.object({
     email: gmailEmail,
     password: z.string().min(1, 'Password is required'),

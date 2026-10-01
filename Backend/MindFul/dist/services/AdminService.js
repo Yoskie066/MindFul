@@ -51,7 +51,7 @@ export const clearAdminResetToken = async (id) => {
     });
 };
 // ============================================================
-// GOOGLE HELPERS (NEW)
+// GOOGLE HELPERS
 // ============================================================
 export const findAdminByGoogleId = async (googleId) => {
     return await prisma.admin.findUnique({ where: { googleId } });
@@ -61,14 +61,29 @@ export const createAdminWithGoogle = async (data) => {
         data: {
             email: data.email.toLowerCase(),
             googleId: data.googleId,
+            name: data.name ?? null,
+            picture: data.picture ?? null,
             password: null,
         },
     });
 };
-export const linkGoogleToAdmin = async (id, googleId) => {
+export const linkGoogleToAdmin = async (id, googleId, name, picture) => {
     return await prisma.admin.update({
         where: { id },
-        data: { googleId },
+        data: {
+            googleId,
+            ...(name ? { name } : {}),
+            ...(picture ? { picture } : {}),
+        },
+    });
+};
+export const updateGoogleProfile = async (id, name, picture) => {
+    return await prisma.admin.update({
+        where: { id },
+        data: {
+            ...(name ? { name } : {}),
+            ...(picture ? { picture } : {}),
+        },
     });
 };
 export const generateAdminToken = (admin) => {

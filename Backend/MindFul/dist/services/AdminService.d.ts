@@ -9,6 +9,8 @@ export declare const createAdmin: (data: {
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -21,6 +23,8 @@ export declare const findAdminByEmail: (email: string) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -33,6 +37,8 @@ export declare const findAdminById: (id: number) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -45,6 +51,8 @@ export declare const updateAdminPassword: (id: number, newPassword: string) => P
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -57,6 +65,8 @@ export declare const updateAdminResetToken: (id: number, token: string, expiry: 
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -69,6 +79,8 @@ export declare const findAdminByResetToken: (token: string) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -81,6 +93,8 @@ export declare const clearAdminResetToken: (id: number) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -93,6 +107,8 @@ export declare const findAdminByGoogleId: (googleId: string) => Promise<{
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -103,11 +119,15 @@ export declare const findAdminByGoogleId: (googleId: string) => Promise<{
 export declare const createAdminWithGoogle: (data: {
     email: string;
     googleId: string;
+    name?: string;
+    picture?: string;
 }) => Promise<{
     id: number;
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;
@@ -115,11 +135,27 @@ export declare const createAdminWithGoogle: (data: {
     createdAt: Date;
     updatedAt: Date;
 }>;
-export declare const linkGoogleToAdmin: (id: number, googleId: string) => Promise<{
+export declare const linkGoogleToAdmin: (id: number, googleId: string, name?: string, picture?: string) => Promise<{
     id: number;
     email: string;
     password: string | null;
     googleId: string | null;
+    name: string | null;
+    picture: string | null;
+    resetToken: string | null;
+    resetTokenExpiry: Date | null;
+    status: string;
+    lastSeen: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+}>;
+export declare const updateGoogleProfile: (id: number, name?: string, picture?: string) => Promise<{
+    id: number;
+    email: string;
+    password: string | null;
+    googleId: string | null;
+    name: string | null;
+    picture: string | null;
     resetToken: string | null;
     resetTokenExpiry: Date | null;
     status: string;

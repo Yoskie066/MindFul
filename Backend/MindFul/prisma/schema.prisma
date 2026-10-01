@@ -9,8 +9,10 @@ datasource db {
 model User {
   id                 Int      @id @default(autoincrement())
   email              String   @unique
-  password           String?                          // nullable for Google users
-  googleId           String?  @unique                 // NEW
+  password           String?
+  googleId           String?  @unique
+  name               String?  @db.VarChar(150)
+  picture            String?  @db.Text
   resetToken         String?  @db.VarChar(255)
   resetTokenExpiry   DateTime?
   status             String   @default("offline") @db.VarChar(20)
@@ -27,8 +29,10 @@ model User {
 model Admin {
   id                 Int      @id @default(autoincrement())
   email              String   @unique
-  password           String?                          // nullable for Google users
-  googleId           String?  @unique                 // NEW
+  password           String?
+  googleId           String?  @unique
+  name               String?  @db.VarChar(150)
+  picture            String?  @db.Text
   resetToken         String?  @db.VarChar(255)
   resetTokenExpiry   DateTime?
   status             String   @default("offline") @db.VarChar(20)

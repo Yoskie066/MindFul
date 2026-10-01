@@ -41,52 +41,36 @@ export default function AdminHeader() {
 
   const adminData = JSON.parse(localStorage.getItem("adminData") || "{}");
   const adminEmail = adminData?.email || "Admin";
-  const adminInitial = adminEmail.charAt(0).toUpperCase();
+  const adminName = adminData?.name || adminEmail;
+  const adminPicture = adminData?.picture || "";
+  const adminInitial = (adminName || "A").charAt(0).toUpperCase();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
-  // ============================================================
-  // HEARTBEAT
-  // ============================================================
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     if (!token) return;
-
     adminApi.heartbeat().catch(() => {});
-
     const interval = setInterval(() => {
-      if (localStorage.getItem("adminToken")) {
-        adminApi.heartbeat().catch(() => {});
-      }
+      if (localStorage.getItem("adminToken")) adminApi.heartbeat().catch(() => {});
     }, 60 * 1000);
-
     return () => clearInterval(interval);
   }, []);
 
-  // ============================================================
-  // BEFOREUNLOAD
-  // ============================================================
   useEffect(() => {
     const handleBeforeUnload = () => {
       const token = localStorage.getItem("adminToken");
       if (!token) return;
       fetch(`${API_BASE_URL}/admin/admin-logout`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         keepalive: true,
       }).catch(() => {});
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
-  // ============================================================
-  // LOGOUT
-  // ============================================================
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);
@@ -112,26 +96,14 @@ export default function AdminHeader() {
 
   const drawerContent = (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          p: 1.5,
-          borderBottom: "1px solid rgba(255,255,255,0.2)",
-        }}
-      >
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 1.5, borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
         <SpaOutlinedIcon sx={{ color: "#1976D2" }} />
-        {/* fontWeight moved into sx */}
-        <Typography variant="h6" sx={{ fontWeight: 800, color: "#0D3654" }}>
-          MindFul
-        </Typography>
+        <Typography variant="h6" sx={{ fontWeight: 800, color: "#0D3654" }}>MindFul</Typography>
       </Box>
 
       <List sx={{ flex: 1, pt: 1, overflow: "auto" }}>
         {navItems.map((item) => {
-          const isActive =
-            !item.isLogout && item.path !== null && location.pathname === item.path;
+          const isActive = !item.isLogout && item.path !== null && location.pathname === item.path;
 
           if (item.isLogout) {
             return (
@@ -140,20 +112,13 @@ export default function AdminHeader() {
                   onClick={handleLogout}
                   disabled={loggingOut}
                   sx={{
-                    borderRadius: 2,
-                    mx: 1,
-                    mb: 0.5,
-                    color: "#D32F2F",
+                    borderRadius: 2, mx: 1, mb: 0.5, color: "#D32F2F",
                     "&:hover": { bgcolor: "rgba(211,47,47,0.12)" },
                     "&.Mui-disabled": { opacity: 0.7 },
                   }}
                 >
                   <ListItemIcon sx={{ color: "#D32F2F" }}>
-                    {loggingOut ? (
-                      <CircularProgress size={20} sx={{ color: "#D32F2F" }} />
-                    ) : (
-                      <LogoutRoundedIcon />
-                    )}
+                    {loggingOut ? <CircularProgress size={20} sx={{ color: "#D32F2F" }} /> : <LogoutRoundedIcon />}
                   </ListItemIcon>
                   <ListItemText
                     primary={loggingOut ? "Logging out..." : "Logout"}
@@ -167,15 +132,10 @@ export default function AdminHeader() {
           return (
             <ListItem key={item.label} disablePadding>
               <ListItemButton
-                onClick={() => {
-                  if (item.path) navigate(item.path);
-                  if (isMobile) setMobileOpen(false);
-                }}
+                onClick={() => { if (item.path) navigate(item.path); if (isMobile) setMobileOpen(false); }}
                 selected={isActive}
                 sx={{
-                  borderRadius: 2,
-                  mx: 1,
-                  mb: 0.5,
+                  borderRadius: 2, mx: 1, mb: 0.5,
                   "&.Mui-selected": {
                     bgcolor: "rgba(255,255,255,0.35)",
                     "& .MuiListItemIcon-root": { color: "#1976D2" },
@@ -184,18 +144,11 @@ export default function AdminHeader() {
                   "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
                 }}
               >
-                <ListItemIcon sx={{ color: isActive ? "#1976D2" : "#0D3654" }}>
-                  {item.icon}
-                </ListItemIcon>
+                <ListItemIcon sx={{ color: isActive ? "#1976D2" : "#0D3654" }}>{item.icon}</ListItemIcon>
                 <ListItemText
                   primary={item.label}
-                  sx={{
-                    "& .MuiTypography-root": {
-                      fontSize: "0.95rem",
-                      fontWeight: isActive ? 700 : 500,
-                      color: "#0D3654",
-                    },
-                  }}
+                  sx={{ "& .MuiTypography-root": {
+                    fontSize: "0.95rem", fontWeight: isActive ? 700 : 500, color: "#0D3654" } }}
                 />
               </ListItemButton>
             </ListItem>
@@ -204,28 +157,25 @@ export default function AdminHeader() {
       </List>
 
       <Divider sx={{ borderColor: "rgba(255,255,255,0.2)" }} />
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: 1.5,
-          p: 1.5,
-          borderTop: "1px solid rgba(255,255,255,0.2)",
-        }}
-      >
-        <Avatar sx={{ width: 40, height: 40, bgcolor: "#1976D2", color: "#fff" }}>
+
+      {/* ADMIN PROFILE — Google Name + Picture */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, borderTop: "1px solid rgba(255,255,255,0.2)" }}>
+        <Avatar
+          src={adminPicture || undefined}
+          sx={{ width: 40, height: 40, bgcolor: "#1976D2", color: "#fff" }}
+        >
           {adminInitial}
         </Avatar>
         <Box sx={{ overflow: "hidden" }}>
           <Typography
-            sx={{
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              color: "#0D3654",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
+            sx={{ fontWeight: 700, fontSize: "0.9rem", color: "#0D3654",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+          >
+            {adminName}
+          </Typography>
+          <Typography
+            sx={{ fontSize: "0.75rem", color: "#4A6F88",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
           >
             {adminEmail}
           </Typography>
@@ -241,32 +191,21 @@ export default function AdminHeader() {
         elevation={0}
         sx={{
           display: { xs: "block", md: "none" },
-          background:
-            "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
+          background: "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
           borderBottom: "1px solid rgba(255,255,255,0.3)",
           color: "#0D3654",
         }}
       >
         <Toolbar>
-          <IconButton
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, color: "#0D3654" }}
-          >
+          <IconButton edge="start" onClick={handleDrawerToggle} sx={{ mr: 2, color: "#0D3654" }}>
             <MenuIcon />
           </IconButton>
-          {/* fontWeight merged into sx */}
           <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 800, color: "#0D3654" }}>
             MindFul
           </Typography>
           <Avatar
-            sx={{
-              width: 32,
-              height: 32,
-              bgcolor: "#1976D2",
-              color: "#fff",
-              fontSize: "0.9rem",
-            }}
+            src={adminPicture || undefined}
+            sx={{ width: 32, height: 32, bgcolor: "#1976D2", color: "#fff", fontSize: "0.9rem" }}
           >
             {adminInitial}
           </Avatar>
@@ -278,14 +217,11 @@ export default function AdminHeader() {
         open={isMobile ? mobileOpen : true}
         onClose={handleDrawerToggle}
         sx={{
-          width: DRAWER_WIDTH,
-          flexShrink: 0,
+          width: DRAWER_WIDTH, flexShrink: 0,
           [`& .MuiDrawer-paper`]: {
-            width: DRAWER_WIDTH,
-            boxSizing: "border-box",
+            width: DRAWER_WIDTH, boxSizing: "border-box",
             borderRight: "1px solid rgba(255,255,255,0.3)",
-            background:
-              "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
+            background: "linear-gradient(135deg, #EDF9FF 0%, #D6EFFF 48%, #BBDFF7 100%)",
             overflowX: "hidden",
             ...(isMobile && { top: 0 }),
           },
@@ -294,11 +230,7 @@ export default function AdminHeader() {
         {drawerContent}
       </Drawer>
 
-      <Box
-        component="nav"
-        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
-        aria-label="sidebar"
-      />
+      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }} aria-label="sidebar" />
     </Box>
   );
 }
