@@ -10,7 +10,6 @@ const AuthRoutes = () => {
   return (
     <>
         <Routes>
-            <Route path='/' element={<UserLogin/>}/>
             <Route path='/login' element={<UserLogin/>}/>
             <Route path='/register' element={<UserRegister/>}/>
             <Route path='/forgot-password' element={<UserForgotPassword/>}/>
