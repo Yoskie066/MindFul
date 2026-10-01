@@ -1,4 +1,4 @@
-🧠 MindFul
+# 🧠 MindFul
 
 MindFul is a full-stack web-based mood and journaling system designed to help users record their daily experiences, monitor personal well-being, review their journal history, and interact with an AI Assistant for self-reflection.
 
